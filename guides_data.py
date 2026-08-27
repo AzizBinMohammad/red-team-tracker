@@ -902,3 +902,1546 @@ BEGINNER.update({
 },
 })
 # === APPEND ANCHOR ===
+
+
+# ===================================================================
+# Phase 6 / Tracks / Capstone guides (agent-authored, both modes)
+# Conceptual, authorized-labs-only tradecraft. Appended by the build.
+# ===================================================================
+BEGINNER.update({
+ "P6-03": {
+  "overview": "Leading an engagement is the difference between running tools and running an operation. This task teaches the paperwork and discipline that keep an engagement legal, safe, and useful to the client: agreeing exactly what's in scope, writing the rules everyone plays by, staying in sync with the blue team, and handling your evidence so it holds up.",
+  "steps": [
+   "Learn the four documents that authorize you before you touch anything: scope, Rules of Engagement (RoE), a signed authorization / 'get-out-of-jail' letter, and points of contact. If any are missing, you are not authorized yet.",
+   "Practise writing a scope statement for a lab target: list in-scope IP ranges, domains, and apps, and explicitly list what is OFF-limits (prod databases, third-party SaaS, physical, social engineering).",
+   "Draft a simple RoE for that lab: allowed hours, techniques permitted vs banned (e.g. no DoS, no real data exfil), and a clear escalation path if something breaks.",
+   "Write a deconfliction plan: a shared channel and a one-line 'is this you?' message format so the blue team can tell your traffic from a real intruder during an incident.",
+   "Set up evidence handling on a personal engagement: timestamp every finding, keep a screenshot + command log, store artifacts in one dated folder, and never copy real sensitive data off-target.",
+   "Do a mock kickoff call out loud (even to yourself): confirm scope, contacts, emergency stop word, and reporting cadence."
+  ],
+  "tools": [
+   "A scope / RoE template (SANS or your firm's)",
+   "A note/evidence tool (Obsidian, CherryTree, Notion)",
+   "A shared comms channel (Signal / Teams / Slack)",
+   "A ticketing or timeline log (spreadsheet is fine)",
+   "PGP/encrypted storage for evidence"
+  ],
+  "resources": [
+   {
+    "name": "PTES - Pre-engagement Interactions",
+    "url": "http://www.pentest-standard.org/index.php/Pre-engagement"
+   },
+   {
+    "name": "NIST SP 800-115 - Technical Guide to Security Testing",
+    "url": "https://csrc.nist.gov/pubs/sp/800/115/final"
+   },
+   {
+    "name": "SANS - Rules of Engagement / scoping worksheets",
+    "url": "https://www.sans.org/"
+   }
+  ],
+  "doneWhen": "You can produce a complete pre-engagement pack for a lab target - scope, RoE, authorization letter, contacts, deconfliction plan, and an evidence-handling procedure - and explain out loud why each item exists.",
+  "pitfall": "Treating scope and RoE as boilerplate to sign and forget. The one range you assumed was in-scope, or the 'obviously fine' technique nobody actually authorized, is exactly what turns a great test into a legal and trust disaster."
+ },
+ "P6-04": {
+  "overview": "Purple-teaming isn't a tool, it's a facilitated loop that leaves the team with a better detection than it started with. This task teaches you to RUN THE ROOM: pick one technique, have red execute it while blue watches the telemetry, then tune the detection together and re-run until it fires cleanly. You are learning to drive the collaboration, not just to attack or defend.",
+  "steps": [
+   "Get authorization and scope in writing first: the exact lab/environment, the window, and who is in the room. Purple only works when everyone knows it is happening, so this is explicitly NOT a covert red-team op.",
+   "Pick ONE ATT&CK technique you have already practised (e.g. a credential-dumping or persistence procedure). A small scope gives you a clean, attributable loop.",
+   "Set the room up so everyone sees the same thing: a red operator, a blue/detection person, and you facilitating with the SIEM and the MITRE ATT&CK Navigator on a shared screen.",
+   "Run the loop out loud - red runs the atomic test, everyone reads the raw telemetry together, blue writes or tunes the detection, red re-runs to confirm it fires and to check for obvious false positives.",
+   "Capture the outcome live in one shared place: the technique, what telemetry appeared, the detection you landed on, and any gap you could not cover yet.",
+   "Close with a 10-minute debrief: what improved, what to test next, and a single one-page writeup instead of scattered notes."
+  ],
+  "tools": [
+   "Atomic Red Team",
+   "Your SIEM (Elastic / Splunk / Wazuh)",
+   "MITRE ATT&CK Navigator",
+   "DetectionLab (lab environment)",
+   "A shared doc or whiteboard"
+  ],
+  "resources": [
+   {
+    "name": "MITRE ATT&CK Navigator",
+    "url": "https://github.com/mitre-attack/attack-navigator"
+   },
+   {
+    "name": "Atomic Red Team",
+    "url": "https://github.com/redcanaryco/atomic-red-team"
+   },
+   {
+    "name": "SCYTHE Purple Team Exercise Framework (PTEF)",
+    "url": "https://github.com/scythe-io/purple-team-exercise-framework"
+   }
+  ],
+  "doneWhen": "You facilitated one full loop - a single technique run, observed, detected, tuned, and re-run to confirm - and produced a one-page shared writeup listing the technique, the telemetry it produced, and the final detection.",
+  "pitfall": "Letting it become a red-vs-blue scoreboard. The deliverable is a detection everyone owns, not 'red won because the alert never fired.'"
+ },
+ "P6-01": {
+  "overview": "Threat intelligence is only useful when it becomes something you can test. This task teaches the pipeline every threat-informed red team runs: read a public adversary report, pull out the behaviours (TTPs), map them to MITRE ATT&CK, and turn them into a small emulation plan you could execute in your own lab. It is the bridge between 'reading about APTs' and reproducing their behaviour on an authorized engagement.",
+  "steps": [
+   "Pick ONE well-written public report (a vendor APT write-up or a CISA advisory) and read it end to end once, for the story, before you touch ATT&CK.",
+   "On a second pass, highlight every attacker BEHAVIOUR - not indicators like IPs or hashes, but actions such as 'used a scheduled task for persistence.'",
+   "Map each behaviour to an ATT&CK technique ID using the ATT&CK site search; write plain '<report sentence> -> Txxxx' pairs. Getting your first correct mapping is the win here.",
+   "Load your technique IDs into ATT&CK Navigator to get a coloured layer - your first visual of what this adversary does.",
+   "Order the techniques into a rough kill-chain (initial access -> execution -> persistence -> ... -> impact); that ordering is your emulation-plan skeleton.",
+   "For two or three techniques, reference an existing Atomic Red Team test for how you would SAFELY reproduce the behaviour in a lab - do not invent weaponized steps.",
+   "Write a one-page plan: adversary, scope, techniques in order, expected telemetry per step, and a note that execution happens ONLY in your own lab or a scoped, authorized engagement - the mapping and planning here is safe desk research."
+  ],
+  "tools": [
+   "MITRE ATT&CK website",
+   "ATT&CK Navigator",
+   "A public CTI report (vendor or CISA)",
+   "Atomic Red Team (reference)",
+   "A notes or spreadsheet tool"
+  ],
+  "resources": [
+   {
+    "name": "MITRE ATT&CK",
+    "url": "https://attack.mitre.org"
+   },
+   {
+    "name": "ATT&CK Navigator",
+    "url": "https://mitre-attack.github.io/attack-navigator/"
+   },
+   {
+    "name": "Getting Started with ATT&CK (resources)",
+    "url": "https://attack.mitre.org/resources/getting-started/"
+   },
+   {
+    "name": "Atomic Red Team",
+    "url": "https://github.com/redcanaryco/atomic-red-team"
+   }
+  ],
+  "doneWhen": "You produced a one-page emulation plan from one real report: 8-12 behaviours mapped to ATT&CK technique IDs, ordered by kill-chain phase, each with a note on the telemetry you'd expect it to produce.",
+  "pitfall": "Extracting indicators (hashes, IPs, domains) instead of behaviours - IOCs expire in days, while TTPs are what you actually emulate and what defenders actually detect."
+ },
+ "P6-07": {
+  "overview": "CRTL (Certified Red Team Lead, Zero-Point Security) is the advanced follow-up to CRTO: it proves you can operate against modern EDR and hardened Windows controls and reason about tooling internals, not just run a framework. Treat it as the capstone check on your Phase 3-4 evasion and tradecraft. Optional-but-respected — the skills it validates matter more than the badge itself.",
+  "steps": [
+   "Get the prerequisites solid first: be comfortable at CRTO level with C2 tradecraft and with the AMSI/ETW/EDR concepts from Phase 4 before you enroll — RTO II assumes that baseline.",
+   "Everything here is lab-only, on the exam range you are licensed to use — never rehearse these techniques on production or client systems without written authorization.",
+   "Enroll in Red Team Ops II and work every hands-on lab; for each defense you get past, write one sentence on the telemetry a defender would still see.",
+   "Grab an early win: take one detection (e.g. an EDR userland hook) and explain in plain English why the evasion works AND how blue team could catch it anyway.",
+   "Keep a tradecraft notebook of your decisions and their detection trade-offs — that understanding, not memorized commands, is what carries you through the exam.",
+   "Book the practical exam, work the range to the objective, and write the professional report."
+  ],
+  "tools": [
+   "Zero-Point Security RTO II course + lab",
+   "A C2 framework (as taught)",
+   "Your Phase 4 detection lab / SIEM",
+   "Tradecraft notebook"
+  ],
+  "resources": [
+   {
+    "name": "Zero-Point Security — Red Team Ops II (CRTL)",
+    "url": "https://www.zeropointsecurity.co.uk/course/red-team-ops-ii"
+   },
+   {
+    "name": "Zero-Point Security — Exams",
+    "url": "https://training.zeropointsecurity.co.uk/pages/exams"
+   },
+   {
+    "name": "MITRE ATT&CK — Defense Evasion (TA0005)",
+    "url": "https://attack.mitre.org/tactics/TA0005/"
+   }
+  ],
+  "doneWhen": "You passed the CRTL exam and submitted the report, and you can articulate the detection trade-off for each evasion you relied on.",
+  "pitfall": "Attempting CRTL before CRTO-level fundamentals are second nature — RTO II will expose the gaps rather than teach them, and you will burn attempts learning what should already be reflex."
+ },
+ "TR-05": {
+  "overview": "The report is the only part of an engagement the client keeps — brilliant access means nothing if you can't explain it. This task teaches you to tell the same story twice: an executive narrative for leaders who care about business risk, and a technical report for engineers who must reproduce and fix every finding.",
+  "steps": [
+   "Confirm you have written authorization for the target and treat the report itself as sensitive — scrub or vault live credentials, PII, and internal hostnames per the rules of engagement before anything leaves the lab.",
+   "Reread your notes and evidence, then list each finding with a fixed shape: what it is, where (affected assets), impact, the screenshot/log evidence, and the remediation.",
+   "Score each finding with the CVSS 3.1 calculator and sort so the worst risk rises to the top — this ordering is the spine of both documents.",
+   "Write the TECHNICAL report first: per finding, give clear reproduction steps, evidence, remediation, and a reference so an engineer can act without asking you anything.",
+   "Then write the EXECUTIVE narrative: 1-2 pages, no jargon, framed as business risk with a short attack story and prioritized recommendations a non-technical leader can act on.",
+   "Add the connective tissue — cover page, scope, methodology, a findings summary table, and an appendix — and proofread the whole thing.",
+   "First win: have a peer read only your executive summary cold and tell you the top risk in one sentence; if they can, that page works."
+  ],
+  "tools": [
+   "Report template (Word or Markdown)",
+   "CVSS 3.1 calculator (FIRST)",
+   "SysReptor or Dradis",
+   "Screenshot + annotation tool",
+   "MITRE ATT&CK"
+  ],
+  "resources": [
+   {
+    "name": "PTES — Reporting",
+    "url": "http://www.pentest-standard.org/index.php/Reporting"
+   },
+   {
+    "name": "TCM Security — sample pentest report",
+    "url": "https://github.com/hmaverickadams/TCM-Security-Sample-Pentest-Report"
+   },
+   {
+    "name": "CVSS v3.1 calculator",
+    "url": "https://www.first.org/cvss/calculator/3.1"
+   }
+  ],
+  "doneWhen": "You have one deliverable where an executive can read ~2 pages and state the top three business risks, and an engineer can pick any finding and fully reproduce it from your steps alone — with no calls back to you.",
+  "pitfall": "Writing only the technical report and bolting on a rushed executive summary that's just a jargon-filled recap — leaders stop reading, and your best work goes unseen by the people who fund the fixes."
+ },
+ "TR-01": {
+  "overview": "Memory-corruption exploitation is where you finally see how a bug in C becomes control of a program: an over-long input overwrites something it shouldn't, and eventually the CPU runs an address you chose. This task builds the single most humbling skill in offense — turning a crash into control — on purpose-built teaching targets so you learn the mechanics safely. AUTHORIZATION: do this ONLY on deliberately-vulnerable binaries made for training, inside an isolated offline VM you own; never point these techniques at real software or anyone else's systems.",
+  "steps": [
+   "Shore up prerequisites first: basic C (what a buffer, pointer, and the stack are) and a little x86/x64 assembly (registers, and how a function call uses the stack). You cannot skip this.",
+   "Build ONE isolated, snapshotted Linux VM as your range. Keep it offline. This is where every experiment happens.",
+   "Pick ONE purpose-built teaching target — a level from exploit.education or a beginner wargame binary — never a real product. Start with mitigations (NX/ASLR/canary) turned off so the core idea is visible.",
+   "Learn the debugger loop with GDB + pwndbg/GEF: set a breakpoint, run the binary, and watch registers, the stack, and memory as your input flows in.",
+   "Reproduce a crash: feed a growing input until the instruction pointer (RIP/EIP) gets overwritten with your bytes. Find the exact offset where control flips.",
+   "Now turn the mitigations back on ONE at a time (NX, then stack canary, then ASLR) and observe how each one breaks your crash — this teaches you what real exploitation must defeat.",
+   "Write the whole crash-to-control path up in your own words, mapping each step to the memory concept underneath it."
+  ],
+  "tools": [
+   "An isolated Linux VM (snapshots on)",
+   "GDB + pwndbg or GEF",
+   "pwntools",
+   "gcc + checksec",
+   "A purpose-built vulnerable binary (exploit.education, wargame)"
+  ],
+  "resources": [
+   {
+    "name": "exploit.education (Phoenix / Protostar labs)",
+    "url": "https://exploit.education"
+   },
+   {
+    "name": "Nightmare — intro binary exploitation course (guyinatuxedo)",
+    "url": "https://guyinatuxedo.github.io"
+   },
+   {
+    "name": "CTF101 — Binary Exploitation",
+    "url": "https://ctf101.org/binary-exploitation/overview/"
+   },
+   {
+    "name": "LiveOverflow — Binary Hacking series",
+    "url": "https://liveoverflow.com"
+   }
+  ],
+  "doneWhen": "In your isolated lab VM you can crash a purpose-built vulnerable binary on demand, show the instruction pointer holding a value YOU chose, name the exact overflow offset, and explain in plain words why each mitigation (NX/canary/ASLR) stopped it when re-enabled.",
+  "pitfall": "Grabbing a copy-paste exploit script before you understand the crash. The moment an offset shifts or a mitigation is on, it fails and you have no idea why — the whole point of this task is the reasoning, not a working script."
+ },
+ "TR-07": {
+  "overview": "Purple teaming is where attacker and defender stop working in silos and solve the same problem together. In this task you run ONE complete loop on a single technique so you can watch a detection get born, dodged, and then hardened — the exact feedback cycle that makes real detections better.",
+  "steps": [
+   "Prereqs first: a lab that both you and a blue teammate control, with logging you can read together (GOAD, DetectionLab, or a home range with Sysmon + a SIEM). Only ever run this on labs you own or an engagement that authorizes it in writing.",
+   "Pick ONE small technique with a clear ATT&CK ID (e.g. T1053 Scheduled Task or T1003 credential access). Narrow scope is the whole point — resist doing a full chain.",
+   "Attack: run it once with a benign payload and tell your teammate exactly what you did and when, so they can hunt against ground truth instead of guessing.",
+   "Detect: your blue teammate writes a detection (a Sigma rule or SIEM query) from the telemetry, and you both confirm it actually fires on your run.",
+   "Evade: change just ONE variable (parent process, timing, an encoding, a renamed artifact) and re-run. See whether the same rule still catches you.",
+   "Re-detect: your teammate updates the rule to catch the new variant. Write down the gap that existed and the fix that closed it.",
+   "Write it up as a small table: attempt, telemetry it produced, detection, evasion, re-detection."
+  ],
+  "tools": [
+   "MITRE ATT&CK",
+   "Atomic Red Team",
+   "Sysmon",
+   "A SIEM (Splunk / Elastic)",
+   "Sigma",
+   "VECTR"
+  ],
+  "resources": [
+   {
+    "name": "MITRE ATT&CK",
+    "url": "https://attack.mitre.org"
+   },
+   {
+    "name": "Atomic Red Team",
+    "url": "https://github.com/redcanaryco/atomic-red-team"
+   },
+   {
+    "name": "Sigma rules",
+    "url": "https://github.com/SigmaHQ/sigma"
+   },
+   {
+    "name": "VECTR (purple-team tracking)",
+    "url": "https://vectr.io"
+   }
+  ],
+  "doneWhen": "You have a documented single-technique loop where a detection was written, evaded by exactly one change, and then re-written to catch the variant — every step timestamped and agreed with your blue teammate.",
+  "pitfall": "Turning it into a contest of 'did I win?'. The deliverable is a better detection at the end, not a scoreboard against your teammate."
+ },
+ "CAP-1": {
+  "overview": "This is the capstone that proves the whole roadmap actually stuck: you get dropped onto a domain-joined host in an AD lab you have NOT seen before, with no walkthrough, and you work your own way to Domain Admin. The goal isn't just 'win' — it's to produce a clean writeup of the path so you can prove you understood every hop, not just guessed it.",
+  "steps": [
+   "Confirm scope first: only run this against a lab you built/own or an explicitly authorized range. Write one line at the top of your notes stating what you're allowed to touch — this habit is non-negotiable for real engagements.",
+   "Build or obtain a fresh AD lab you have NOT solved before (GOAD/vulnerable-AD, or a friend's build), and take a clean snapshot so you can reset and retry.",
+   "Start from the assumed-breach host: run whoami /all, enumerate the domain with BloodHound, and just READ the graph before touching anything.",
+   "Pick the least-noisy edge you can actually explain (a Kerberoastable SPN, an ACL you can abuse, a delegation) and work ONE hop at a time — verify each new context with whoami before moving on.",
+   "As you go, keep a running timeline: timestamp, host, what you ran, what you got back. This IS your deliverable.",
+   "Reach Domain Admin, then reset the lab and re-walk the SAME path from your notes alone — if your writeup can't reproduce the win, it isn't finished."
+  ],
+  "tools": [
+   "A fresh AD lab (GOAD / vulnerable-AD)",
+   "BloodHound / SharpHound",
+   "PowerView",
+   "Impacket",
+   "A note-taking tool (Obsidian / CherryTree)"
+  ],
+  "resources": [
+   {
+    "name": "GOAD - Game of Active Directory",
+    "url": "https://github.com/Orange-Cyberdefense/GOAD"
+   },
+   {
+    "name": "The Hacker Recipes - Active Directory",
+    "url": "https://www.thehacker.recipes/"
+   },
+   {
+    "name": "MITRE ATT&CK - Enterprise Matrix",
+    "url": "https://attack.mitre.org/matrices/enterprise/"
+   }
+  ],
+  "doneWhen": "You reached Domain Admin unassisted in a lab you had never seen, AND a peer can follow your written path to reproduce the compromise without asking you a single question.",
+  "pitfall": "Chasing BloodHound's 'shortest path to Domain Admin' button and pasting tool output you can't explain — the capstone tests whether you understood the path, not whether the tool found one."
+ },
+ "TR-04": {
+  "overview": "These are the four short procedures and the operational discipline that separate a professional operator from a hobbyist: how the client can tell 'is this you?', how you protect their data, how you undo everything you did, and how you stop the whole operation fast. You write them before the engagement starts, as part of the Rules of Engagement, and they are what keep the work legal, safe, and repeatable.",
+  "steps": [
+   "Confirm scope first: these procedures only ever run against your own lab or a written-authorized engagement. Treat them as part of the RoE, agreed in writing before you touch anything.",
+   "Small first win: for your next lab exercise, start a simple activity log with columns for UTC time, source IP, host touched, action, and a one-line description. This single habit is the backbone of deconfliction.",
+   "Write a one-page deconfliction procedure: a named point of contact on each side, an out-of-band channel (phone/Signal), and how the blue team can ask 'was that the red team?' and get a fast yes/no.",
+   "Write a data-handling note: where loot (credentials, screenshots, PII) is stored, that it is encrypted at rest, who may access it, and the date it gets destroyed after the report is delivered.",
+   "Write a cleanup checklist: log every artifact you create as you create it (files, accounts, scheduled tasks, tickets, persistence, C2 implants) so you can remove all of it at the end.",
+   "Write a kill-switch procedure: how you would immediately stop all C2 and disable payloads if the client says 'stop' or something goes wrong, including payload kill-dates so nothing keeps running forever.",
+   "Rehearse it: on your lab, tear down one implant and revert one change using only your checklist and manifest, not your memory."
+  ],
+  "tools": [
+   "An encrypted store (KeePassXC / VeraCrypt / age)",
+   "A notes/wiki tool (Obsidian, OneNote)",
+   "An activity-log / manifest sheet",
+   "Lab snapshots for reverting",
+   "A C2's kill / kill-date feature"
+  ],
+  "resources": [
+   {
+    "name": "Red Team Development and Operations (Vest & Tubberville)",
+    "url": "https://redteam.guide/"
+   },
+   {
+    "name": "NIST SP 800-115 (testing & data handling)",
+    "url": "https://csrc.nist.gov/pubs/sp/800/115/final"
+   },
+   {
+    "name": "PTES - Pre-engagement Interactions",
+    "url": "https://www.pentest-standard.org/"
+   }
+  ],
+  "doneWhen": "You have four short written procedures (deconfliction, data-handling, cleanup, kill-switch) plus an activity-log template, and you have used the cleanup checklist to fully revert one lab exercise back to a clean snapshot.",
+  "pitfall": "Treating this as boring paperwork to 'do later' - the operator who cannot answer 'was that you?' or cannot cleanly tear down their access loses the client's trust instantly."
+ },
+ "CAP-5A": {
+  "overview": "The capstone: instead of firing off random techniques, you pick ONE real, well-documented threat group, read what analysts have published about how it operates, and turn that intel into a plan you run against a lab you can fully watch. This is the exercise that turns a technique collector into an operator who can think like a specific adversary and prove what a defender would and wouldn't see.",
+  "steps": [
+   "Pick ONE named group with strong public documentation (a MITRE ATT&CK Group page plus ideally a published adversary emulation plan), and confirm this runs only in a lab you own with written authorization.",
+   "Read the threat intel: the group's ATT&CK techniques, typical tooling, and objectives. Build an ATT&CK Navigator layer showing just their techniques so the plan is scoped to them, not to your comfort zone.",
+   "Write a short emulation plan: a clear objective (a 'flag'), the in-scope techniques mapped to ATT&CK IDs, and the order you will run them from initial access through to the objective.",
+   "Instrument the lab BEFORE you touch it: Sysmon with a good config, an EDR/SIEM, and central logging, so every action is being recorded before you take it. Fire a known-good test to confirm telemetry actually lands.",
+   "Execute the plan in the lab using benign stand-ins for the group's tooling. The goal is to reproduce the behaviour and the artifacts it leaves, not to copy the exact malware.",
+   "For each step, log what you did and what telemetry it produced; mark which detections fired and which gaps stayed silent.",
+   "Write a short after-action report mapping your run back to ATT&CK, listing the detections that caught you and the gaps that didn't."
+  ],
+  "tools": [
+   "MITRE ATT&CK Navigator",
+   "Atomic Red Team",
+   "MITRE Caldera",
+   "Sysmon",
+   "A SIEM/EDR (Elastic or Splunk)",
+   "VECTR"
+  ],
+  "resources": [
+   {
+    "name": "MITRE ATT&CK - Groups",
+    "url": "https://attack.mitre.org/groups/"
+   },
+   {
+    "name": "CTID Adversary Emulation Library",
+    "url": "https://github.com/center-for-threat-informed-defense/adversary_emulation_library"
+   },
+   {
+    "name": "MITRE ATT&CK Navigator",
+    "url": "https://mitre-attack.github.io/attack-navigator/"
+   },
+   {
+    "name": "Atomic Red Team",
+    "url": "https://github.com/redcanaryco/atomic-red-team"
+   }
+  ],
+  "doneWhen": "You ran a documented named-group emulation end to end in your instrumented lab and produced an after-action report that maps every step to ATT&CK, with the detections it fired and the gaps it exposed.",
+  "pitfall": "Emulating a brand name instead of behaviour - running your favourite tools and slapping a group's name on the report. The intel must drive the plan, not the other way round."
+ },
+ "CAP-5B": {
+  "overview": "The point of a second named-APT emulation is not to repeat CAP-5A, it is to prove you can adapt to a DIFFERENT playbook. You pick an actor whose tradecraft deliberately contrasts your first one, run it against your instrumented lab, and the real deliverable is a measurable jump in what your blue team can detect.",
+  "steps": [
+   "Get scope and rules of engagement in writing first (timing, kill-switch, a deconfliction contact) even in your own lab, so you practise the paperwork every real op needs.",
+   "Choose a second actor that CONTRASTS your CAP-5A pick: if #1 was quiet living-off-the-land, choose a louder criminal or destructive actor, and vice-versa. Contrast is the whole point.",
+   "Read 2-3 threat-intel reports on that actor, extract its techniques, and build an ATT&CK Navigator layer; overlay it on your CAP-5A layer to see what is genuinely NEW to you.",
+   "Baseline BEFORE you attack: record which of the plan's techniques your SIEM/EDR already alerts on, so you have an honest 'before' number.",
+   "Write an emulation plan using safe, benign substitutes for anything destructive, then execute it in your lab, logging the start and stop time of each technique for the blue team.",
+   "Compare 'after' coverage to your baseline, write or tune Sigma/EDR rules for whatever slipped through, and re-run those techniques to confirm they now fire.",
+   "Deliver three things: an executive narrative, a technical report, and a purple-team debrief that states the coverage improvement as a concrete number."
+  ],
+  "tools": [
+   "MITRE ATT&CK Navigator",
+   "Caldera / Atomic Red Team",
+   "VECTR",
+   "Sigma",
+   "Your lab SIEM/EDR (Elastic or Splunk)"
+  ],
+  "resources": [
+   {
+    "name": "MITRE Adversary Emulation Library (CTID)",
+    "url": "https://github.com/center-for-threat-informed-defense/adversary_emulation_library"
+   },
+   {
+    "name": "MITRE ATT&CK",
+    "url": "https://attack.mitre.org"
+   },
+   {
+    "name": "VECTR (purple-team tracking)",
+    "url": "https://vectr.io"
+   },
+   {
+    "name": "Atomic Red Team",
+    "url": "https://github.com/redcanaryco/atomic-red-team"
+   }
+  ],
+  "doneWhen": "You can point to a before/after ATT&CK heatmap for the new actor, at least a few new or tuned detections that now fire on techniques that were silent before, and a delivered exec report + technical report + purple debrief.",
+  "pitfall": "Picking an actor too similar to your CAP-5A one (or only running techniques you already detect) so coverage barely moves and you have just repeated the first capstone under a new name."
+ },
+ "P6-06": {
+  "overview": "Detection coverage is only real if you measure it. This task builds the habit of recording, for every technique you run on an authorized engagement, whether the environment prevented it, alerted on it, or missed it entirely, so that the purple-team story becomes data instead of anecdote.",
+  "steps": [
+   "Stand up a VECTR instance in your own lab and create an Assessment/Campaign scoped to the engagement",
+   "For each planned action, add a Test Case tagged to its MITRE ATT&CK technique ID",
+   "As you execute in the lab, mark each Test Case outcome: Prevented, Alerted/Detected, Logged-but-missed, or No telemetry",
+   "Record supporting evidence per case: timestamp, source host, and which log or alert (or its absence) proved the result",
+   "Generate the ATT&CK heatmap view and note which tactics are dark (uncovered)",
+   "Export a short summary and hand the gaps to the detection-engineering backlog"
+  ],
+  "tools": [
+   "VECTR",
+   "MITRE ATT&CK Navigator",
+   "Atomic Red Team",
+   "A SIEM or EDR console (for evidence)"
+  ],
+  "resources": [
+   {
+    "name": "VECTR (SRA) documentation",
+    "url": "https://docs.vectr.io/"
+   },
+   {
+    "name": "MITRE ATT&CK",
+    "url": "https://attack.mitre.org/"
+   },
+   {
+    "name": "MITRE ATT&CK Navigator",
+    "url": "https://mitre-attack.github.io/attack-navigator/"
+   }
+  ],
+  "doneWhen": "You have a completed VECTR campaign with every test case scored to an ATT&CK ID and an exported heatmap that visibly marks at least the prevented, detected, and missed outcomes.",
+  "pitfall": "Marking a technique 'detected' because you assume a tool should have caught it, instead of confirming the alert or log actually fired and citing the evidence."
+ },
+ "P6-02": {
+  "overview": "MITRE CTID publishes free, TTP-by-TTP emulation plans that model how real adversaries behave. Learning to read one teaches you to think in terms of ATT&CK techniques rather than isolated tricks, and gives you a safe, structured way to exercise a lab and see what your defenses actually catch.",
+  "steps": [
+   "Skim the ATT&CK framework so you can recognize tactics, techniques, and sub-technique IDs on sight.",
+   "Open one published CTID emulation plan and map its sections: intelligence summary, operations flow, and the per-technique breakdown.",
+   "Pick a small slice (2-3 techniques) rather than the whole campaign for your first pass.",
+   "For each technique, choose a benign substitute (a harmless test action) instead of any live-fire step, and write down the expected telemetry.",
+   "Run the slice in an isolated personal lab, then check your logs/EDR to confirm what was and was not observed.",
+   "Record each technique as detected / partial / missed, and note one defensive improvement per gap."
+  ],
+  "tools": [
+   "MITRE ATT&CK Navigator",
+   "CTID Adversary Emulation Library",
+   "Atomic Red Team",
+   "Sysmon",
+   "A local SIEM or EDR (e.g. Wazuh, Elastic)"
+  ],
+  "resources": [
+   {
+    "name": "MITRE ATT&CK",
+    "url": "https://attack.mitre.org/"
+   },
+   {
+    "name": "CTID Adversary Emulation Library",
+    "url": "https://github.com/center-for-threat-informed-defense/adversary_emulation_library"
+   },
+   {
+    "name": "Atomic Red Team",
+    "url": "https://github.com/redcanaryco/atomic-red-team"
+   },
+   {
+    "name": "ATT&CK Navigator",
+    "url": "https://mitre-attack.github.io/attack-navigator/"
+   }
+  ],
+  "doneWhen": "You have run a 2-3 technique slice of one CTID plan in your own lab using benign substitutes and produced a detected/partial/missed table with at least one defensive fix noted per gap.",
+  "pitfall": "Treating the plan as a checklist to blast through the whole campaign at once, instead of scoping a small slice and actually reading the telemetry each technique should produce."
+ },
+ "TR-02": {
+  "overview": "Reading a published vulnerability write-up and reproducing its analysis in your own lab turns passive reading into durable understanding: you learn to trace a bug from root cause to fix instead of memorizing headlines. This builds the foundational muscle every defender needs — reasoning about why software fails and how a patch closes the gap.",
+  "steps": [
+   "Pick a CVE with a mature, well-documented write-up and an available fixed version, so the patch is studyable.",
+   "Read the advisory and write-up once for the story, then again taking notes on affected versions, root cause, and the fix.",
+   "Stand up an isolated lab (offline VM or container) running the vulnerable version — never a production or internet-exposed system.",
+   "In plain language, restate the root cause: what assumption the code made that turned out to be wrong.",
+   "Observe the researcher's described behavior at the analysis level (logs, crash, error state) without building any weaponized payload.",
+   "Diff the vulnerable and patched versions and write one paragraph on how the fix removes the flawed assumption.",
+   "Map the technique to a MITRE ATT&CK ID and note one detection or logging signal a defender could watch for."
+  ],
+  "tools": [
+   "A snapshot-capable hypervisor (VirtualBox or VMware Workstation)",
+   "Docker for disposable vulnerable targets",
+   "git and a diff viewer for comparing pre/post-patch source",
+   "MITRE ATT&CK Navigator",
+   "A note-taking tool (Obsidian or a plain markdown journal)"
+  ],
+  "resources": [
+   {
+    "name": "MITRE CVE Program",
+    "url": "https://www.cve.org/"
+   },
+   {
+    "name": "NIST National Vulnerability Database",
+    "url": "https://nvd.nist.gov/"
+   },
+   {
+    "name": "MITRE ATT&CK",
+    "url": "https://attack.mitre.org/"
+   },
+   {
+    "name": "OWASP Vulnerable Web Applications Directory",
+    "url": "https://owasp.org/www-project-vulnerable-web-applications-directory/"
+   }
+  ],
+  "doneWhen": "You can explain the root cause and the fix in your own words in under five minutes, and you have a one-page lab note linking the CVE to an ATT&CK technique and a detection idea.",
+  "pitfall": "Chasing a proof-of-concept to \"make it pop\" instead of understanding the bug — copy-pasting an exploit teaches nothing about root cause or defense."
+ },
+ "P6-05": {
+  "overview": "Running a published, sanctioned emulation plan in Caldera against a lab you built and instrumented is the fastest way to see the full purple-team loop: an attacker technique fires, and you watch where (and whether) it lights up in your own logs. It builds the core habit of tying every adversary action back to a piece of defensive telemetry, which is the foundation of detection engineering.",
+  "steps": [
+   "Build an isolated lab (host-only or internal network, snapshots taken) so nothing can reach production or the internet.",
+   "Stand up the Caldera server and deploy an agent to a lab endpoint you fully control.",
+   "Before running anything, turn on logging: Sysmon on the endpoint plus log forwarding into a SIEM, and confirm events are arriving.",
+   "Pick one published, sanctioned adversary profile or emulation plan and read it end to end so you know which ATT&CK techniques it exercises.",
+   "Run a single operation and watch it ability-by-ability rather than firing everything at once.",
+   "For each executed ability, hunt the matching artifact in your logs and note whether it was logged, alerted, or missed.",
+   "Write a short coverage table (technique to telemetry) and revert your snapshots when done."
+  ],
+  "tools": [
+   "MITRE Caldera",
+   "Sysmon",
+   "Wazuh or Elastic Security (SIEM)",
+   "Atomic Red Team (for baseline sanity checks)",
+   "VirtualBox or Proxmox (isolated lab)"
+  ],
+  "resources": [
+   {
+    "name": "MITRE Caldera",
+    "url": "https://caldera.mitre.org/"
+   },
+   {
+    "name": "Caldera Documentation",
+    "url": "https://caldera.readthedocs.io/"
+   },
+   {
+    "name": "MITRE ATT&CK",
+    "url": "https://attack.mitre.org/"
+   },
+   {
+    "name": "Atomic Red Team",
+    "url": "https://github.com/redcanaryco/atomic-red-team"
+   }
+  ],
+  "doneWhen": "You have run one full operation and can map every executed ability to at least one telemetry artifact (or explicitly mark it as 'no telemetry') in a written coverage table.",
+  "pitfall": "Running the operation before your logging pipeline is verified working, so the techniques fire but you have nothing to measure and no way to tell detection gaps from collection gaps."
+ },
+ "TR-03": {
+  "overview": "Clean, separated infrastructure and consistent attribution are what keep an authorized engagement honest, legal, and useful. This guide builds the professional habit of designing where your operator activity lives, how it can be told apart, and how those choices become the detection signal a defender relies on.",
+  "steps": [
+   "Study why engagements isolate infrastructure per client and per engagement: blast radius, data hygiene, and legal scope.",
+   "Learn the concepts at design level only: staging vs. long-haul, redirectors, C2 tiers, and what an 'attribution indicator' is.",
+   "Map how infrastructure choices become defender-observable indicators (TLS certs, domain age, hosting ASN, JA3-style fingerprints).",
+   "In your own lab, write a one-page attribution plan: identifiers you will use, what stays constant, and deconfliction contacts.",
+   "Practice a deconfliction habit: keep a timestamped activity log tied to source addresses so any action can be reconstructed.",
+   "For every hygiene control you list, name the blue-team signal it preserves or creates, tying design back to detection.",
+   "Read a public threat report and note where sloppy infrastructure reuse led to attribution."
+  ],
+  "tools": [
+   "MITRE ATT&CK Navigator",
+   "VECTR",
+   "MITRE Engage",
+   "A lab hypervisor (VirtualBox / Proxmox)",
+   "A documentation system (Obsidian / GitBook)"
+  ],
+  "resources": [
+   {
+    "name": "MITRE ATT&CK",
+    "url": "https://attack.mitre.org/"
+   },
+   {
+    "name": "Red Team Development and Operations",
+    "url": "https://redteam.guide/"
+   },
+   {
+    "name": "MITRE Engage",
+    "url": "https://engage.mitre.org/"
+   }
+  ],
+  "doneWhen": "You can produce a one-page lab engagement plan that names isolation boundaries, planned attribution indicators, deconfliction contacts, and the detection signal each control maps to.",
+  "pitfall": "Reusing infrastructure or operator identifiers across engagements or clients, which contaminates findings and makes deconfliction and honest attribution impossible."
+ },
+ "TR-06": {
+  "overview": "Learning an offensive technique without knowing the trace it leaves is only half an education. A technique-to-telemetry notebook forces you to pair every technique you study with the defender signal it produces, which is the foundation of the purple-team mindset and makes you far more useful to any detection team.",
+  "steps": [
+   "Create a simple notebook template with fixed columns: technique name, ATT&CK ID, data source, event/log ID, key fields, and a plain-language detection idea.",
+   "For each technique you learn, map it to its ATT&CK technique ID and the ATT&CK data source / data component it relates to.",
+   "In your own lab only, safely reproduce or observe the technique and watch what appears in logs (Sysmon, Windows Security, EDR, cloud audit).",
+   "Record the concrete signal: which event fired, the specific fields that mattered, and what normal versus suspicious looks like.",
+   "Write one sentence describing how a defender would detect it, and note any blind spot where you saw no telemetry.",
+   "Review entries weekly, tag them by tactic, and link related techniques so patterns emerge."
+  ],
+  "tools": [
+   "MITRE ATT&CK Navigator",
+   "Sysmon",
+   "Atomic Red Team",
+   "Sigma",
+   "Windows Event Viewer",
+   "VECTR"
+  ],
+  "resources": [
+   {
+    "name": "MITRE ATT&CK Data Sources",
+    "url": "https://attack.mitre.org/datasources/"
+   },
+   {
+    "name": "Atomic Red Team",
+    "url": "https://github.com/redcanaryco/atomic-red-team"
+   },
+   {
+    "name": "SigmaHQ detection rules",
+    "url": "https://github.com/SigmaHQ/sigma"
+   },
+   {
+    "name": "VECTR purple-team platform",
+    "url": "https://vectr.io"
+   }
+  ],
+  "doneWhen": "You have at least 10 techniques logged, each with its data source, a real event/log ID observed in your own lab, the key fields, and a one-sentence detection hypothesis.",
+  "pitfall": "Copying ATT&CK descriptions into the notebook instead of actually observing telemetry in your lab, so you record technique names but never the real defender signal."
+ },
+ "CAP-3": {
+  "overview": "This capstone teaches you to close the loop between offense and defense: run one authorized objective against a real EDR in your own lab, then prove what it detected and what it missed. It builds the single most valued skill in purple teaming — turning an attack narrative into concrete, testable detections that make the defense measurably better.",
+  "steps": [
+   "Pick ONE clear objective and map every planned action to MITRE ATT&CK technique IDs before you touch a keyboard.",
+   "Stand up an isolated lab with a licensed/trial EDR and centralized logging you fully own and can reset.",
+   "Run the objective safely in your lab, taking timestamped notes of each step, host, and expected telemetry.",
+   "Pull the EDR alerts and raw telemetry, then build a coverage matrix: technique -> detected / logged-only / silent.",
+   "Write one detection idea (Sigma-style pseudo-logic, no payloads) for every gap you found, and note the data source it needs.",
+   "Package a short red-team narrative and a blue-team detection set together so a defender could act on it Monday morning."
+  ],
+  "tools": [
+   "MITRE ATT&CK Navigator",
+   "Atomic Red Team",
+   "Sigma",
+   "VECTR",
+   "Elastic Security or a trial EDR",
+   "Sysmon"
+  ],
+  "resources": [
+   {
+    "name": "MITRE ATT&CK Navigator",
+    "url": "https://mitre-attack.github.io/attack-navigator/"
+   },
+   {
+    "name": "MITRE Engenuity CTID Adversary Emulation Library",
+    "url": "https://github.com/center-for-threat-informed-defense/adversary_emulation_library"
+   },
+   {
+    "name": "VECTR (SRA)",
+    "url": "https://vectr.io/"
+   },
+   {
+    "name": "Atomic Red Team",
+    "url": "https://github.com/redcanaryco/atomic-red-team"
+   }
+  ],
+  "doneWhen": "You deliver a paired package: a coverage matrix over your ATT&CK objective plus at least one written detection idea for every silent step, all reproducible in your reset lab.",
+  "pitfall": "Treating the EDR's silence as success. The goal is not to evade; it is to document every gap and hand the defender a detection for it."
+ },
+ "CAP-2": {
+  "overview": "This capstone ties every prior skill into one authorized, end-to-end lab engagement: scoping, external footholds, internal movement, and a written report. Working in your own lab with your own tooling and command-and-control infrastructure teaches the discipline that separates a professional operator from a button-pusher, and every step exists to make defenders faster at seeing it.",
+  "steps": [
+   "Write a one-page rules-of-engagement for your lab: scope, timing windows, out-of-bounds systems, and who to notify if something breaks",
+   "Draw the engagement as a kill-chain diagram mapped to MITRE ATT&CK tactics before you touch a keyboard",
+   "Stand up isolated C2 infrastructure in your lab and confirm it can only reach lab targets, never the internet or production",
+   "Keep a timestamped operator log of every action, host, and artifact so the timeline can be reconstructed later",
+   "Practice one authorized foothold and one internal-movement step safely in your lab, pausing to capture what telemetry each generates",
+   "Pair each technique with the log source or detection that would catch it and note the gap if none exists",
+   "Write a short report with an executive summary, a technical narrative, and prioritized defensive fixes"
+  ],
+  "tools": [
+   "MITRE ATT&CK Navigator",
+   "VECTR",
+   "Kali or Parrot lab VMs",
+   "Sysmon + Windows Event Logging",
+   "Obsidian or CherryTree (operator notes)"
+  ],
+  "resources": [
+   {
+    "name": "MITRE ATT&CK",
+    "url": "https://attack.mitre.org/"
+   },
+   {
+    "name": "MITRE ATT&CK Navigator",
+    "url": "https://mitre-attack.github.io/attack-navigator/"
+   },
+   {
+    "name": "VECTR by SRA",
+    "url": "https://vectr.io/"
+   },
+   {
+    "name": "PTES Technical Guidelines",
+    "url": "http://www.pentest-standard.org/index.php/Main_Page"
+   }
+  ],
+  "doneWhen": "You have a written report from a self-contained lab run that a peer can read and reproduce the timeline from, with at least three prioritized defensive recommendations tied to specific ATT&CK techniques.",
+  "pitfall": "Treating it as a hacking speed-run instead of a documentation exercise: no operator log and no detection mapping means the engagement taught you nothing a defender can use."
+ },
+ "CAP-4": {
+  "overview": "Hybrid environments blur the line between cloud and on-prem, and the trust bridges that connect them (identity sync, SSO, federation) are where real attack paths live. This capstone teaches you to reason about a cloud-to-on-prem path methodically — plan it, map it, and document it — instead of chasing tools, building the planning and reporting discipline every authorized engagement depends on.",
+  "steps": [
+   "Define the lab scope and a single written objective (e.g. reach a specific on-prem resource from an assumed-breach cloud identity); record assumptions and rules of engagement before touching anything.",
+   "Study how hybrid identity links cloud and on-prem — identity sync, seamless SSO, and federation — by building a small free lab tenant so you can see the trust bridges safely.",
+   "Map the terrain first: enumerate identities, roles, and trust relationships in your lab and draw them before reasoning about any path.",
+   "Reason about candidate paths on paper as hypotheses — list each hop and why it works — then practice only in your own lab.",
+   "For every hop, record the matching MITRE ATT&CK technique ID and one detection or telemetry source that would catch it.",
+   "Document the chosen path end-to-end as an annotated diagram plus a short narrative of the objective and each step.",
+   "Write a one-page defensive takeaway naming the single control or detection that would have broken the path earliest."
+  ],
+  "tools": [
+   "MITRE ATT&CK Navigator",
+   "BloodHound Community Edition",
+   "Microsoft 365 Developer tenant (lab)",
+   "draw.io / diagrams.net",
+   "VECTR"
+  ],
+  "resources": [
+   {
+    "name": "MITRE ATT&CK Cloud Matrix",
+    "url": "https://attack.mitre.org/matrices/enterprise/cloud/"
+   },
+   {
+    "name": "MITRE ATT&CK Navigator",
+    "url": "https://mitre-attack.github.io/attack-navigator/"
+   },
+   {
+    "name": "Microsoft Entra hybrid identity documentation",
+    "url": "https://learn.microsoft.com/en-us/entra/identity/hybrid/"
+   },
+   {
+    "name": "Microsoft 365 Developer Program (free lab tenant)",
+    "url": "https://developer.microsoft.com/en-us/microsoft-365/dev-program"
+   }
+  ],
+  "doneWhen": "You produce a single annotated diagram tracing at least one complete cloud-to-on-prem path from initial cloud access to the defined objective, with each hop mapped to an ATT&CK technique ID and a matching detection idea.",
+  "pitfall": "Treating it as a tool-running race instead of a reasoning exercise — running enumeration tools without ever mapping the trust relationships or writing down why each hop works."
+ }
+})
+
+PRO.update({
+ "P6-03": {
+  "overview": "Owning an engagement means owning the risk envelope, not just the exploitation. This task hardens your pre-engagement and evidence discipline so the operation is legally defensible, deconflicted against a live SOC, and reconstructable months later under scrutiny - the skills that separate an operator from a test lead.",
+  "steps": [
+   "Drive scoping to precision: negotiate in/out-of-scope assets, third-party and cloud-tenant boundaries (get written provider consent where required), data-handling limits, and explicit constraints on DoS, exfil volume, and lateral reach.",
+   "Author RoE that survive contact: authorized windows, permitted TTPs vs prohibited actions, escalation and emergency-stop triggers, named authorizing signatory, and a signed authorization letter carried by every operator.",
+   "Stand up deconfliction before go-live: shared out-of-band channel, per-action attribution (source IPs, C2 domains, tooling hashes, campaign IDs), and a real-time 'is this us?' protocol so the blue team can separate you from a genuine intrusion in minutes.",
+   "Operate with attribution hygiene: log every action with timestamp, source, target, and command; tag artifacts to campaign IDs; and maintain an activity log detailed enough to feed the client's purple-team review and detection-engineering backlog.",
+   "Enforce evidence integrity: chain-of-custody, hashed and encrypted-at-rest artifacts, minimized capture of sensitive data (redact/tokenize PII, never bulk-pull real records), and a documented retention + secure-destruction timeline.",
+   "Run structured deconfliction/pause events: know when to call it - crown-jewel systems, unexpected prod impact, discovery of a real prior compromise - and escalate through the agreed contacts rather than pushing on.",
+   "Close the loop: reconcile your activity log against SOC alerts in the debrief so every action is either detected, explained, or logged as a coverage gap."
+  ],
+  "tools": [
+   "Scope/RoE + authorization templates (firm-standard)",
+   "GhostWriter or similar engagement/OPSEC log",
+   "Out-of-band deconfliction channel (Signal/Mattermost)",
+   "Evidence store with hashing + encryption (VeraCrypt/GPG)",
+   "MITRE ATT&CK for TTP mapping",
+   "Activity/timeline logger (structured, exportable)"
+  ],
+  "resources": [
+   {
+    "name": "MITRE ATT&CK - technique mapping for reporting",
+    "url": "https://attack.mitre.org/"
+   },
+   {
+    "name": "PTES - Pre-engagement Interactions",
+    "url": "http://www.pentest-standard.org/index.php/Pre-engagement"
+   },
+   {
+    "name": "NIST SP 800-115",
+    "url": "https://csrc.nist.gov/pubs/sp/800/115/final"
+   },
+   {
+    "name": "CREST - Red Team / assurance guidance",
+    "url": "https://www.crest-approved.org/"
+   }
+  ],
+  "doneWhen": "You can lead a full engagement lifecycle in a lab: negotiate and document scope + RoE with a signed authorization, run a deconfliction protocol against a monitoring team, and hand over a chain-of-custody-clean evidence package plus an activity log that reconciles cleanly against defender telemetry.",
+  "pitfall": "Confusing authorization with a signature. Scope drift, an un-negotiated cloud/third-party boundary, or evidence you can't prove the integrity of will detonate the moment the engagement is questioned - and it will be questioned precisely when you found something serious."
+ },
+ "P6-04": {
+  "overview": "Facilitation is the skill that converts paired attack+detect reps into durable, measurable detection coverage. You run a time-boxed, ATT&CK-scoped tuning cycle where emulation, telemetry triage, detection-as-code, and re-test happen in one room under tight deconfliction, and you leave with a coverage delta you can defend to a client.",
+  "steps": [
+   "Pre-brief and scope: lock a small technique/procedure set, define the environment, the deconfliction channel, success metrics (detection present? fidelity? MTTD?), and named roles (facilitator, emulation, detection engineer, scribe).",
+   "Emulate controllably - atomic-first, then chain via Caldera - one procedure variant at a time so telemetry attribution is unambiguous.",
+   "Drive the loop: execute, triage the raw telemetry (not just the alert), author or tune detection-as-code (Sigma), then re-run to confirm the true positive and probe the false-positive surface with benign look-alikes.",
+   "Track coverage on a versioned ATT&CK Navigator layer - detected / partial / gap per procedure - so the before/after delta is explicit rather than anecdotal.",
+   "Enforce OPSEC of the exercise itself: announce activity to the SOC, tag emulation hosts/traffic, timestamp every action, and keep lab artifacts out of production detection content.",
+   "Close with a delta report: rules shipped, coverage before vs after, unresolved gaps with owners and a next-cycle backlog - and push rules into version control, not a chat log."
+  ],
+  "tools": [
+   "Atomic Red Team",
+   "MITRE Caldera",
+   "Sigma / detection-as-code pipeline",
+   "SIEM (Elastic / Splunk)",
+   "ATT&CK Navigator",
+   "VECTR"
+  ],
+  "resources": [
+   {
+    "name": "SCYTHE Purple Team Exercise Framework (PTEF)",
+    "url": "https://github.com/scythe-io/purple-team-exercise-framework"
+   },
+   {
+    "name": "MITRE ATT&CK",
+    "url": "https://attack.mitre.org"
+   },
+   {
+    "name": "VECTR (purple-team tracking)",
+    "url": "https://github.com/SecurityRiskAdvisors/VECTR"
+   },
+   {
+    "name": "Sigma (SigmaHQ)",
+    "url": "https://github.com/SigmaHQ/sigma"
+   }
+  ],
+  "doneWhen": "You ran a time-boxed cycle that shipped at least one tuned, version-controlled detection, produced a before/after ATT&CK coverage layer, and delivered a delta report naming remaining gaps and their owners.",
+  "pitfall": "Optimising for 'alerts fired' over detection quality - shipping brittle, high-FP rules the SOC mutes within a week. Measure fidelity and durability, not just a green light on the confirming re-run."
+ },
+ "P6-01": {
+  "overview": "Threat-informed operations start here: convert raw CTI into a structured, ATT&CK-mapped emulation plan that a customer's detection engineering can be measured against. This is the intel-to-plan half of purple teaming - the deliverable is a defensible, peer-reviewable emulation plan, not a run log.",
+  "steps": [
+   "Source-triage the report first: assess confidence, collection bias, and observed-vs-inferred behaviours; note the reporting date so you emulate the campaign, not a stale variant.",
+   "Extract TTPs to technique + sub-technique + PROCEDURE detail - procedure-level fidelity ('how') drives emulation and detection far more than the bare technique ID.",
+   "Use TRAM to accelerate the first-pass mapping, then hand-verify every hit against the CISA/MITRE mapping best-practices - automated mappers both over- and under-call.",
+   "Model sequencing and dependencies with Attack Flow or an ordered Navigator layer; capture the procedure chain, not a bag of techniques.",
+   "Author the plan against the CTID Adversary Emulation Library template: objectives, scope, per-technique procedures, expected telemetry, and abort/cleanup criteria.",
+   "Define measurement up front - bind each technique to expected data sources and detection hypotheses so execution yields prevented/detected/missed outcomes in VECTR, not vibes.",
+   "Treat the plan as sensitive and authorization-bound: scope to RoE, validate all tooling lab-first, and handle sourced CTI plus the plan itself as engagement-restricted material."
+  ],
+  "tools": [
+   "MITRE ATT&CK + Navigator",
+   "TRAM",
+   "Attack Flow",
+   "CTID Adversary Emulation Library",
+   "Caldera / Atomic Red Team",
+   "VECTR"
+  ],
+  "resources": [
+   {
+    "name": "CTID Adversary Emulation Library",
+    "url": "https://github.com/center-for-threat-informed-defense/adversary_emulation_library"
+   },
+   {
+    "name": "TRAM (Threat Report ATT&CK Mapper)",
+    "url": "https://github.com/center-for-threat-informed-defense/tram"
+   },
+   {
+    "name": "CISA - Best Practices for MITRE ATT&CK Mapping",
+    "url": "https://www.cisa.gov/resources-tools/resources/best-practices-mitre-attck-mapping"
+   },
+   {
+    "name": "Attack Flow",
+    "url": "https://github.com/center-for-threat-informed-defense/attack-flow"
+   }
+  ],
+  "doneWhen": "You have a peer-reviewable, CTID-format emulation plan for a chosen adversary: procedure-level techniques in dependency order, each carrying expected telemetry, a detection hypothesis, and cleanup steps - ready to run as a scoped purple-team exercise and score in VECTR.",
+  "pitfall": "Mapping to technique IDs and stopping - a plan without procedure-level detail and expected-telemetry mapping yields green checkmarks, not coverage. Related trap: emulating the sample instead of the behaviour; you emulate the TTP, not a specific malware hash."
+ },
+ "P6-07": {
+  "overview": "CRTL / RTO II is the research-tier checkpoint: sustained operations against EDR-instrumented, hardened Windows. It validates that you reason about telemetry and tooling internals, not just drive a framework. Capstone for your Phase 3-4 evasion and OPSEC.",
+  "steps": [
+   "Gate-check yourself: CRTO tradecraft fluent, Phase 4 AMSI/ETW/EDR internals internalized — otherwise this becomes tuition, not certification.",
+   "Work all nine labs; for every technique map the ATT&CK data source and the exact sensor that observes it (userland hook, kernel callback, ETW-TI, Sysmon).",
+   "Run your own EDR-instrumented detection lab in parallel — validate each evasion against real telemetry, never against 'it ran'.",
+   "Reason at the primitive level: why a bypass holds, its failure modes, and the residual artifacts it leaves for purple team to hunt.",
+   "Range and authorized scope only; treat OPSEC discipline — sleep, jitter, egress, artifact hygiene — as gradeable, because operationally it is.",
+   "Sit the exam, reach the objective across the hardened path, and deliver a report a red team lead would sign."
+  ],
+  "tools": [
+   "RTO II course + lab range",
+   "C2 (course-provided)",
+   "EDR-instrumented lab + SIEM/ETW",
+   "BloodHound",
+   "Detection notebook"
+  ],
+  "resources": [
+   {
+    "name": "Zero-Point Security — Red Team Ops II (CRTL)",
+    "url": "https://www.zeropointsecurity.co.uk/course/red-team-ops-ii"
+   },
+   {
+    "name": "Zero-Point Security — Exams",
+    "url": "https://training.zeropointsecurity.co.uk/pages/exams"
+   },
+   {
+    "name": "MITRE ATT&CK — Defense Evasion (TA0005)",
+    "url": "https://attack.mitre.org/tactics/TA0005/"
+   }
+  ],
+  "doneWhen": "CRTL passed with an accepted report; you can whiteboard the detection surface and failure mode of every technique on the exam path.",
+  "pitfall": "Optimizing for 'it evaded' instead of understanding the sensor — the operators who last know precisely what each action costs them in telemetry."
+ },
+ "TR-05": {
+  "overview": "Reporting is the deliverable; the access is throwaway. Two audiences, two artifacts, one evidentiary spine — this task hardens your ability to translate technical findings into board-level risk without losing the reproducibility engineers need to remediate.",
+  "steps": [
+   "Lock the evidentiary chain: timestamped notes, per-finding evidence, and hashes of any artifacts. Scrub live creds and PII, classify the document, and plan encrypted delivery before anything leaves the range — OPSEC on the report is part of the engagement.",
+   "Normalize every finding: title, affected assets, root cause vs symptom, CVSS 3.1 with a business-context adjustment, ATT&CK technique mapping, and remediation with references.",
+   "Build the attack narrative / kill chain — how atomic findings chained to the objective. This is the story executives actually buy, not the vuln list.",
+   "Write the technical section for zero-back-channel reproduction, separating root cause from instance so remediation is systemic rather than whack-a-mole.",
+   "Write the executive narrative to business risk: 1-2 pages, quantified or qualified risk, strategic recommendations, and explicit ties to their risk register and compliance drivers.",
+   "Prioritize by risk-to-business, not raw CVSS; give a realistic roadmap that splits quick wins from structural fixes.",
+   "State the negative space: what was NOT tested, false-positive handling, deconfliction notes, and the retest window; version and classify the final."
+  ],
+  "tools": [
+   "SysReptor / PlexTrac / Dradis",
+   "CVSS 3.1 (FIRST)",
+   "MITRE ATT&CK Navigator",
+   "DOCX / Markdown / LaTeX template",
+   "Hashing + evidence tooling"
+  ],
+  "resources": [
+   {
+    "name": "Public pentesting reports (corpus)",
+    "url": "https://github.com/juliocesarfort/public-pentesting-reports"
+   },
+   {
+    "name": "NIST SP 800-115",
+    "url": "https://csrc.nist.gov/pubs/sp/800/115/final"
+   },
+   {
+    "name": "PTES — Reporting",
+    "url": "http://www.pentest-standard.org/index.php/Reporting"
+   },
+   {
+    "name": "MITRE ATT&CK Navigator",
+    "url": "https://mitre-attack.github.io/attack-navigator/"
+   }
+  ],
+  "doneWhen": "A peer reviewer confirms all three: an exec states top business risks and required decisions from the summary alone; any engineer reproduces and remediates any finding without contacting you; every finding carries evidence, CVSS, an ATT&CK reference, and remediation.",
+  "pitfall": "CVSS-as-priority — shipping a base-score-sorted list that ignores context. A 'medium' on a crown-jewel asset outranks a 'high' on a sandbox, and executives need that translation, not the raw vector."
+ },
+ "TR-01": {
+  "overview": "Memory-corruption tradecraft is about primitives and mitigation-defeat reasoning, not one PoC — building a single from-scratch exploit end to end forces the modern mindset: root-cause a bug, promote it to a read/write primitive, leak to defeat ASLR, then engineer reliability. You will rarely deploy bespoke research on an op (N-day with patch context is the norm), but you cannot lead exploit-dev or edge/appliance work without having driven one full chain yourself. Lab-only, airgapped: treat the artifact as sensitive research, not something to run anywhere near production.",
+  "steps": [
+   "Commit to ONE target and one bug class end to end (Linux userland stack or glibc heap is the pragmatic first; kernel/browser later). Depth over breadth.",
+   "Triage properly: reproduce deterministically, root-cause the corruption, classify it (OOB write, UAF, type confusion), and map exactly what data/offsets you control.",
+   "Promote the bug to primitives: relative → arbitrary read/write, an info leak to break ASLR/PIE, and an explicit model of allocator/stack state you can steer.",
+   "Defeat mitigations methodically — enable NX, PIE/ASLR, stack canary (and CET/shadow-stack if in scope) one at a time; reason through ROP/JOP, leak-first ordering, and what each mitigation costs your chain.",
+   "Achieve control-flow hijack → code exec, then engineer RELIABILITY: measure success rate across many runs, harden against heap noise/ASLR variance — a one-off pop is not done.",
+   "Write it up as research: bug class, primitive chain, mitigation defeats, reliability %, and the DETECTION footprint it emits (crash artifacts, WER/core dumps, EDR memory scanning) so the purple/blue value is captured.",
+   "OPSEC the work: airgapped snapshotted VM, never test unique research against internet-connected or shared infra, and understand the crash telemetry before assuming any real-world use."
+  ],
+  "tools": [
+   "GDB + pwndbg/GEF (WinDbg if Windows)",
+   "pwntools",
+   "Ghidra / IDA / Binary Ninja",
+   "AFL++ or libFuzzer (bug discovery)",
+   "ropper / one_gadget",
+   "checksec"
+  ],
+  "resources": [
+   {
+    "name": "pwn.college — structured exploitation curriculum",
+    "url": "https://pwn.college"
+   },
+   {
+    "name": "Corelan — Exploit Writing Tutorials",
+    "url": "https://www.corelan.be"
+   },
+   {
+    "name": "Google Project Zero — research writeups (modern primitive/mitigation craft)",
+    "url": "https://googleprojectzero.blogspot.com"
+   },
+   {
+    "name": "MITRE ATT&CK T1203 — Exploitation for Client Execution",
+    "url": "https://attack.mitre.org/techniques/T1203/"
+   }
+  ],
+  "doneWhen": "You have one reproducible, documented from-scratch exploit for a lab target that lands reliable code execution with NX + ASLR/PIE enabled (info-leak included), rebuildable from your notes alone, plus a research writeup covering the primitive chain, measured reliability, and the telemetry the technique generates.",
+  "pitfall": "Calling a mitigations-off, single-run crash 'done', or overfitting to one walkthrough's offsets. The craft lives in defeating at least NX+ASLR via a real leak and in reliability engineering — a fragile PoC that only works with protections disabled teaches you almost nothing transferable."
+ },
+ "TR-07": {
+  "overview": "Purple is a feedback loop, not a scoreboard: it converts your tradecraft into durable defender telemetry. One documented attack->detect->evade->re-detect cycle proves you can drive a detection off a brittle IOC and up to a behavioral analytic that survives your next mutation.",
+  "steps": [
+   "Scope to a single ATT&CK (sub-)technique. Agree the hypothesis, data sources, and success criteria with blue up front and track the run in VECTR.",
+   "Execute white-card against an instrumented range and timestamp every action so blue correlates against ground truth, not blind hunting.",
+   "Blue authors the detection from real telemetry, then classifies it — IOC vs tool-signature vs behavior — and places it on the Pyramid of Pain.",
+   "Evade deliberately, shifting ONE layer at a time (parent-child, LOLBIN swap, encoding, sleep/jitter, artifact rename) and logging which change broke the rule and why.",
+   "Blue re-detects by climbing the pyramid: rebuild the analytic on invariants (the behavioral chain), not the mutated string.",
+   "Record metrics per cycle — coverage, MTTD, FP rate, residual gap — and feed unresolved gaps back as the next cycle's hypotheses."
+  ],
+  "tools": [
+   "MITRE ATT&CK + Navigator",
+   "Atomic Red Team / CALDERA",
+   "Sysmon + ETW",
+   "Sigma",
+   "SIEM/EDR (Elastic / Splunk)",
+   "VECTR"
+  ],
+  "resources": [
+   {
+    "name": "MITRE ATT&CK",
+    "url": "https://attack.mitre.org"
+   },
+   {
+    "name": "VECTR",
+    "url": "https://vectr.io"
+   },
+   {
+    "name": "Sigma rules",
+    "url": "https://github.com/SigmaHQ/sigma"
+   },
+   {
+    "name": "MITRE CALDERA",
+    "url": "https://caldera.mitre.org"
+   }
+  ],
+  "doneWhen": "VECTR (or equivalent) shows the technique moving detected -> evaded -> re-detected, with the final analytic keyed on behavioral invariants and MTTD / FP-rate / residual-gap recorded for each cycle.",
+  "pitfall": "Evading on several variables at once so you can't attribute the bypass — and letting blue 'close' it with a brittle IOC that your next single mutation defeats for free."
+ },
+ "CAP-1": {
+  "overview": "Terminal exam for the whole track: cold, unseen AD range, assumed-breach foothold, no hints, self-directed to DA, then a defensible path writeup. This is where methodology, enumeration discipline, and the ability to justify every edge get stress-tested under your own judgment rather than a walkthrough's.",
+  "steps": [
+   "Fix scope/authorization and start a timestamped operator log before your first command — every action, host, context, and result. The log is the graded artifact.",
+   "Triage the foothold: local context, host posture, and domain recon via BloodHound; enumerate before you act, and prefer collection methods whose telemetry footprint you can name.",
+   "Model the graph as attack paths, not a single shortest path — enumerate multiple routes to DA (ACL abuse, Kerberos delegation, cred material, trust/GPO edges) and rank them by reliability and noise.",
+   "Execute hop-by-hop with deliberate OPSEC: minimize touches, validate each new principal/context, prefer living-off-the-land, and note the defender signal (Sysmon/4624/4769/4662) each action would generate.",
+   "Reach DA, then pivot to blue perspective: for each edge, record the detective/preventive control and the exact event ID or ETW provider that would have caught it — that mapping is what turns this into purple-team value.",
+   "Snapshot-reset the range and re-run the path from your writeup alone to prove reproducibility; if a step needed improvisation you didn't document, the writeup fails.",
+   "Deliver: attack narrative + graph, per-edge detection mapping, and prioritized remediations tied to the specific misconfigurations you abused."
+  ],
+  "tools": [
+   "BloodHound / SharpHound",
+   "PowerView / PowerShell",
+   "Impacket",
+   "Rubeus",
+   "Certipy (AD CS)",
+   "netexec (nxc)"
+  ],
+  "resources": [
+   {
+    "name": "ired.team - Active Directory",
+    "url": "https://www.ired.team/offensive-security-experiments/active-directory-kerberos-abuse"
+   },
+   {
+    "name": "The Hacker Recipes - AD",
+    "url": "https://www.thehacker.recipes/"
+   },
+   {
+    "name": "MITRE ATT&CK - Enterprise Matrix",
+    "url": "https://attack.mitre.org/matrices/enterprise/"
+   },
+   {
+    "name": "SpecterOps - BloodHound docs",
+    "url": "https://bloodhound.specterops.io/"
+   }
+  ],
+  "doneWhen": "Unassisted DA on a cold range, plus a writeup another operator reproduces from text alone AND that maps every abused edge to its detection source and a concrete remediation.",
+  "pitfall": "Treating it as a CTF flag-grab — smashing the noisiest path to DA and skipping the detection/remediation mapping produces a win with no professional deliverable and no evidence you can operate with restraint."
+ },
+ "TR-04": {
+  "overview": "The operational connective tissue of an engagement: a deconfliction channel that lets the blue team distinguish your activity from a real intrusion in seconds, disciplined loot handling, artifact tracking that guarantees full cleanup, and a kill-switch that halts your tradecraft on demand. Weak procedures here get engagements paused, evidence contaminated, or your access mistaken for a genuine breach - and cost you the callback.",
+  "steps": [
+   "Build a deconfliction protocol: named POCs both sides, an out-of-band channel, and per-op unique markers (canary strings in payloads, dedicated source IPs/user-agents, tagged accounts) so any observed activity is attributable to you in one lookup.",
+   "Maintain a real-time operator log (UTC timestamp, host, source, MITRE technique, command intent, artifact created) - it doubles as your deconfliction lookup table and your cleanup manifest.",
+   "Define data-handling: classify loot (creds/hashes/tokens/PII), encrypt at rest and in transit, minimize collection, scope access, and set a destruction date tied to report delivery and retention terms; keep chain-of-custody for anything sensitive.",
+   "Track every artifact as a manifest entry (dropped files, services, scheduled tasks, accounts, ACL edits, tickets, persistence, implants, redirector infra) with its exact revert action - nothing gets created without a matching cleanup entry.",
+   "Engineer the kill-switch: payload kill-dates plus working-hours guardrails, a documented C2 teardown sequence, burnable/rotatable infra, and a single stop-op trigger that halts beacons and disables staging on client request or anomaly.",
+   "Frame cleanup against defender telemetry: know which artifacts map to Indicator Removal (T1070) so your teardown doesn't emit louder signal than the activity it hides, and record what you could not cleanly remove for the report.",
+   "Rehearse: run a lab op, execute full teardown and kill from the manifest alone, then diff host state against a clean snapshot to prove reversion."
+  ],
+  "tools": [
+   "Encrypted loot store (age / VeraCrypt / KeePassXC)",
+   "Operator-log & reporting (GhostWriter, Vectr, Obsidian)",
+   "C2 kill-date & teardown (Cobalt Strike / Sliver / Mythic)",
+   "IaC for burnable redirectors (Terraform / Ansible)",
+   "Lab snapshots for reversion diffing"
+  ],
+  "resources": [
+   {
+    "name": "Red Team Development and Operations - deconfliction & data handling",
+    "url": "https://redteam.guide/"
+   },
+   {
+    "name": "MITRE ATT&CK T1070 - Indicator Removal",
+    "url": "https://attack.mitre.org/techniques/T1070/"
+   },
+   {
+    "name": "GhostWriter (engagement log & report management)",
+    "url": "https://ghostwriter.wiki/"
+   },
+   {
+    "name": "Sliver C2 (kill-dates & teardown)",
+    "url": "https://github.com/BishopFox/sliver"
+   }
+  ],
+  "doneWhen": "For a mock engagement you can produce a deconfliction one-pager with unique markers, a populated artifact/cleanup manifest, a data-handling + destruction policy, and a kill-switch runbook - then demonstrate a from-manifest teardown that returns a lab host to a clean snapshot with no residual artifacts.",
+  "pitfall": "Improvising cleanup from memory instead of a live artifact manifest - you'll orphan a scheduled task, a rogue account, or a live beacon, leaving the client exposed and unable to formally close out the engagement."
+ },
+ "CAP-5A": {
+  "overview": "Intel-driven emulation is what separates adversary emulation from a technique dump: you constrain yourself to one actor's documented TTPs, run them against a fully instrumented range, and score red execution against blue detection. This capstone proves you can plan from CTI, operate inside a defined threat model, and ship a defensible purple-team deliverable rather than a bag of pops.",
+  "steps": [
+   "Scope one actor with strong public reporting; derive the technique set from ATT&CK Groups plus primary CTI, citing a source per technique. Discipline is refusing techniques the actor doesn't use.",
+   "Build the plan as ordered kill-chain phases (initial access -> execution -> persistence -> cred access -> lateral -> collection -> exfil/impact) with ATT&CK IDs, procedure-level notes, and a defined objective/flag.",
+   "Stand up the instrumented range first: Sysmon with a curated config, EDR, a network sensor, and centralized logging; validate every sensor with known-good tests before the run so 'missed' means missed, not unmonitored.",
+   "Emulate at the procedure level with functional analogs (Caldera, Atomic Red Team, CTID plans, your own benign tooling) - reproduce the behaviour and artifacts the actor generates, never their exact binaries.",
+   "Track execution and detection in VECTR: per-technique outcome (blocked / alerted / logged / missed), timestamps, and the precise signal each step emitted.",
+   "Run OPSEC analysis on your own trail - map each procedure to its telemetry cost and the hunt/detection that would catch it - and convert every gap into a detection-engineering action.",
+   "Deliver a purple report: an ATT&CK coverage heatmap, prioritized detection gaps, and concrete rule/hunt recommendations the blue team can implement."
+  ],
+  "tools": [
+   "MITRE ATT&CK Navigator",
+   "MITRE Caldera",
+   "CTID Adversary Emulation Library",
+   "VECTR",
+   "Sysmon + Elastic/Splunk",
+   "Atomic Red Team"
+  ],
+  "resources": [
+   {
+    "name": "CTID Adversary Emulation Library",
+    "url": "https://github.com/center-for-threat-informed-defense/adversary_emulation_library"
+   },
+   {
+    "name": "MITRE ATT&CK - Adversary Emulation Plans",
+    "url": "https://attack.mitre.org/resources/adversary-emulation-plans/"
+   },
+   {
+    "name": "MITRE ATT&CK - Groups",
+    "url": "https://attack.mitre.org/groups/"
+   },
+   {
+    "name": "VECTR",
+    "url": "https://vectr.io/"
+   }
+  ],
+  "doneWhen": "You executed a single named-actor emulation across the full kill chain in an instrumented range, tracked every procedure's outcome in VECTR, and shipped a purple report with an ATT&CK coverage heatmap and prioritized detection recommendations.",
+  "pitfall": "Optimizing for 'did it pop' over fidelity and measurement - an emulation that isn't sourced to real CTI and isn't scored against blue telemetry is just a pentest wearing an APT's name."
+ },
+ "CAP-5B": {
+  "overview": "A second intel-driven emulation chosen for maximum tradecraft contrast with CAP-5A, so the run stresses telemetry your defenses have never seen. Success is not 'popped the DC', it is a quantified detection-coverage delta and a purple product the blue team keeps.",
+  "steps": [
+   "Select an actor whose TTP profile is orthogonal to your CAP-5A actor (different initial access, C2 pattern, credential-access and persistence families) so you exercise net-new ATT&CK techniques, not muscle memory.",
+   "Distil 2-3 primary-source CTI reports into a cited technique list; build the Navigator layer and diff it against CAP-5A to isolate the new coverage targets.",
+   "Author the emulation plan with faithful-but-safe substitutes (benign payloads, sanctioned test artifacts); lock RoE, deconfliction, and cleanup/kill-switch before execution.",
+   "Snapshot pre-run detection coverage in VECTR (per-technique detected / not detected) as your baseline heatmap.",
+   "Execute against instrumented defenses, timestamping each technique; treat every gap as a finding and note the exact telemetry source (Sysmon/ETW/EDR field) that should have caught it.",
+   "Engineer or tune analytics for the misses, re-emulate to validate true-positive fire, and record MTTD alongside the coverage delta.",
+   "Ship exec narrative + technical report + purple debrief; the headline metric is coverage improvement (delta of techniques detected) with the new detections handed over."
+  ],
+  "tools": [
+   "MITRE ATT&CK Navigator",
+   "Caldera",
+   "Atomic Red Team",
+   "VECTR",
+   "Sigma",
+   "Elastic/Splunk + a real EDR"
+  ],
+  "resources": [
+   {
+    "name": "MITRE Adversary Emulation Library (CTID)",
+    "url": "https://github.com/center-for-threat-informed-defense/adversary_emulation_library"
+   },
+   {
+    "name": "ATT&CK Navigator",
+    "url": "https://mitre-attack.github.io/attack-navigator/"
+   },
+   {
+    "name": "VECTR",
+    "url": "https://vectr.io"
+   },
+   {
+    "name": "SigmaHQ",
+    "url": "https://github.com/SigmaHQ/sigma"
+   }
+  ],
+  "doneWhen": "A signed-off package exists: baseline vs post-tuning ATT&CK heatmap showing a positive delta, N new or updated detections validated by re-emulation, MTTD recorded, and exec + technical + purple deliverables complete.",
+  "pitfall": "Emulating 'vibes' instead of cited intel, or scoring success by objectives reached rather than detections gained, and never re-testing tuned rules so 'improved coverage' stays unproven on paper."
+ },
+ "P6-06": {
+  "overview": "At the professional altitude, VECTR is your system of record for turning an engagement into a measurable, trendable detection-coverage program. The goal is not a one-off heatmap but a repeatable pipeline where every gap becomes a tracked detection-engineering ticket and every re-test shows movement, giving leadership defensible metrics like mean-time-to-detect and coverage delta over time.",
+  "steps": [
+   "Model the engagement as a VECTR Assessment with campaigns aligned to a threat-informed plan (emulate a specific adversary's technique set, not a random grab-bag)",
+   "Define an outcome taxonomy up front and hold to it: Prevented, Detected (alerted), Logged-not-alerted, Not-logged, plus detection time and telemetry source per case",
+   "Capture evidence granularly so results are reproducible and auditable: data source, detection logic reference, and analyst-confirmed timestamps",
+   "Reconcile VECTR outcomes against your SIEM/EDR detection content so 'missed' reflects a true control gap, not a scoping or telemetry blind spot",
+   "Convert each gap into a detection-engineering work item with the ATT&CK ID, required data source, and a proposed analytic; link the ticket back to the VECTR case",
+   "Re-run after fixes and use VECTR's comparison/heatmap views to report coverage delta, MTTD trend, and prevented-vs-detected ratio",
+   "Roll findings into a threat-informed defense narrative and schedule the next emulation cycle against the weakest tactics"
+  ],
+  "tools": [
+   "VECTR",
+   "MITRE ATT&CK Navigator",
+   "CALDERA",
+   "Atomic Red Team",
+   "Detection-as-code / SIEM content repo",
+   "Ticketing system (Jira/GitHub Issues)"
+  ],
+  "resources": [
+   {
+    "name": "VECTR (SRA) documentation",
+    "url": "https://docs.vectr.io/"
+   },
+   {
+    "name": "MITRE Center for Threat-Informed Defense",
+    "url": "https://ctid.mitre.org/"
+   },
+   {
+    "name": "MITRE ATT&CK",
+    "url": "https://attack.mitre.org/"
+   },
+   {
+    "name": "Adversary Emulation Library (CTID)",
+    "url": "https://github.com/center-for-threat-informed-defense/adversary_emulation_library"
+   }
+  ],
+  "doneWhen": "A closed loop is demonstrated in VECTR: baseline campaign scored, gaps ticketed to detection engineering, fixes deployed, and a re-test campaign showing a measurable coverage/MTTD improvement over the baseline heatmap.",
+  "pitfall": "Chasing a green heatmap by counting raw log presence as 'detection' — coverage without a corresponding alert or analytic is a blind spot dressed up as a win, and it inflates metrics while leaving defenders no better off."
+ },
+ "P6-02": {
+  "overview": "A CTID emulation plan is a threat-informed test design, not a script: it encodes intel, an operations flow, and mappings you can retarget to your own lab's coverage questions. Mastering plan selection and adaptation lets you run repeatable, purple-team-style assessments that measurably move detection engineering forward rather than just generating noise.",
+  "steps": [
+   "Choose a plan whose modeled adversary overlaps your threat model, and justify the selection against your organization's or lab's relevant tech stack.",
+   "Read the full plan and rebuild its technique chain in ATT&CK Navigator to see coverage, ordering dependencies, and where sub-techniques diverge.",
+   "For each technique, define a benign substitute and a hypothesis: which data source and detection rule should fire, and at what fidelity.",
+   "Scope the run explicitly (isolated lab boundaries, no production data, defined rollback) and version your test plan so runs are comparable over time.",
+   "Execute in tracked waves, capturing detection outcome, alert latency, and data-source completeness per technique in VECTR.",
+   "Convert each miss or low-fidelity hit into a concrete detection-engineering backlog item and re-test to confirm closure.",
+   "Adapt the plan for the next cycle: swap substitutes, add sibling sub-techniques, and re-baseline against updated ATT&CK releases."
+  ],
+  "tools": [
+   "CTID Adversary Emulation Library",
+   "MITRE ATT&CK Navigator",
+   "VECTR",
+   "Atomic Red Team",
+   "CALDERA",
+   "Detection-as-code pipeline (Sigma)"
+  ],
+  "resources": [
+   {
+    "name": "CTID Adversary Emulation Library",
+    "url": "https://github.com/center-for-threat-informed-defense/adversary_emulation_library"
+   },
+   {
+    "name": "MITRE Engenuity CTID",
+    "url": "https://mitre-engenuity.org/cybersecurity/center-for-threat-informed-defense/"
+   },
+   {
+    "name": "VECTR",
+    "url": "https://vectr.io/"
+   },
+   {
+    "name": "ATT&CK Data Sources",
+    "url": "https://attack.mitre.org/datasources/"
+   }
+  ],
+  "doneWhen": "You have executed an adapted CTID plan across tracked waves in VECTR with per-technique detection outcomes, and every miss has a filed detection improvement plus a passing re-test.",
+  "pitfall": "Emulating for a coverage score while ignoring detection fidelity and data-source gaps, so 'green' techniques still would not catch the real adversary in production."
+ },
+ "TR-02": {
+  "overview": "At a senior level this practice becomes structured vulnerability research reading: extracting the primitive, validating the researcher's causal claim against source, and characterizing the patch's completeness. The payoff is defensive leverage — variant analysis, detection engineering, and the ability to judge whether a fix is real or merely papers over the symptom.",
+  "steps": [
+   "Curate a target class (a memory-safety bug, a deserialization flaw, an auth-logic error) and select a CVE whose write-up, source, and patch are all public.",
+   "Reconstruct the vulnerable code path from the write-up and confirm each causal claim against the actual source rather than trusting the narrative.",
+   "Build a reproducible lab with snapshots and instrumentation (verbose logging, ASAN/sanitizers, or an application debugger) to observe the fault at the analysis level.",
+   "Study the patch commit closely: identify the exact invariant it restores and reason about whether nearby code shares the same assumption (variant hunting).",
+   "Author a defensive artifact — a detection rule, log signature, or hardening note — derived from the observable behavior, not from any offensive payload.",
+   "Write a short root-cause memo: primitive, preconditions, fix mechanism, residual risk, and ATT&CK mapping, suitable for a team knowledge base.",
+   "Peer-review your memo against the original researcher's claims and record where your analysis diverged and why."
+  ],
+  "tools": [
+   "gdb/lldb or a language-appropriate debugger with sanitizers (ASAN/UBSAN)",
+   "Ghidra or a source-level code browser for tracing paths",
+   "git blame/log for patch archaeology",
+   "Sigma or YARA for encoding detections",
+   "VECTR for tracking the study as a detection-development exercise",
+   "MITRE ATT&CK Navigator for technique mapping"
+  ],
+  "resources": [
+   {
+    "name": "MITRE ATT&CK",
+    "url": "https://attack.mitre.org/"
+   },
+   {
+    "name": "Center for Threat-Informed Defense",
+    "url": "https://ctid.mitre.org/"
+   },
+   {
+    "name": "VECTR",
+    "url": "https://vectr.io/"
+   },
+   {
+    "name": "Sigma Detection Rules",
+    "url": "https://github.com/SigmaHQ/sigma"
+   }
+  ],
+  "doneWhen": "You produce a peer-reviewable root-cause memo that independently confirms (or corrects) the write-up's causal claim, assesses patch completeness, and ships at least one detection artifact mapped to ATT&CK.",
+  "pitfall": "Treating the write-up as ground truth and skipping source/patch verification — researchers simplify or occasionally err, and an unverified mental model produces brittle detections and false variant conclusions."
+ },
+ "P6-05": {
+  "overview": "At this level the goal is measurement rigor, not execution: a sanctioned Caldera emulation plan becomes a repeatable instrument for validating your detection stack against a specific, ATT&CK-mapped adversary. Done well, each run yields per-technique detection outcomes, MTTD numbers, and concrete detection-engineering work that you validate by re-running.",
+  "steps": [
+   "Define scope and rollback discipline up front: isolated segment, VM snapshots, and a documented cleanup/revert plan before any agent runs.",
+   "Select a published plan from the CTID Adversary Emulation Library aligned to a threat you actually care about, and confirm its ATT&CK technique coverage.",
+   "Verify pipeline health first: confirm each expected log source is flowing and baselined so a 'miss' means detection, not a dead collector.",
+   "Execute in phases, recording operation start/stop times and ability identifiers so you can correlate telemetry precisely instead of eyeballing it.",
+   "Score the blue side: classify each technique as alerted / logged-only / missed, and capture mean time to detect and log-source coverage.",
+   "Turn gaps into detections (author or tune Sigma/analytics), then re-run the same plan to prove the new detection fires.",
+   "Track results across runs in VECTR so coverage trends are visible over time and defensible to stakeholders."
+  ],
+  "tools": [
+   "MITRE Caldera",
+   "VECTR",
+   "Sigma",
+   "Sysmon + Splunk or Elastic Security",
+   "CTID Adversary Emulation Library",
+   "Jupyter (telemetry correlation and analysis)"
+  ],
+  "resources": [
+   {
+    "name": "Adversary Emulation Library (CTID)",
+    "url": "https://github.com/center-for-threat-informed-defense/adversary_emulation_library"
+   },
+   {
+    "name": "Caldera Documentation",
+    "url": "https://caldera.readthedocs.io/"
+   },
+   {
+    "name": "VECTR",
+    "url": "https://vectr.io/"
+   },
+   {
+    "name": "Sigma Detection Rules",
+    "url": "https://github.com/SigmaHQ/sigma"
+   }
+  ],
+  "doneWhen": "You produce a purple-team readout with per-technique detection outcomes (detected/logged/missed) and MTTD, plus at least one new or tuned detection whose effectiveness you confirmed with a follow-up run.",
+  "pitfall": "Treating Caldera's successful execution as the score; the emulation is only the stimulus, and the real result is what your defenses did (and did not) observe and how fast."
+ },
+ "TR-03": {
+  "overview": "At senior level, infrastructure hygiene and attribution discipline are about operational integrity, emulation fidelity, and clean measurement: separation is designed so findings are defensible, deconfliction is instant, and the blue team receives an honest detection signal. This builds a repeatable methodology that improves both offense realism and defensive value engagement over engagement.",
+  "steps": [
+   "Design a tiered infrastructure model conceptually (staging / redirector / long-haul) and articulate the specific risk each tier isolates.",
+   "Define an attribution matrix per engagement: which operator identifiers and indicators you hold constant versus deliberately vary, and why.",
+   "For adversary emulation, justify indicator choices from CTI on the emulated actor and map each to ATT&CK techniques.",
+   "Establish a deconfliction protocol: real-time activity logging, out-of-band comms with the trusted agent, and a rapid stand-down path.",
+   "Define teardown and evidence-retention discipline: decommissioning, what is preserved for the report, and log chain-of-custody.",
+   "Run a purple-team readback and confirm the blue team can reconstruct your timeline from their telemetry; refine controls where signal was lost.",
+   "Codify the outcome into a reusable methodology and measure improvement across engagements."
+  ],
+  "tools": [
+   "MITRE ATT&CK Navigator",
+   "VECTR",
+   "CTID Adversary Emulation Library",
+   "MITRE Engage",
+   "SIEM/EDR telemetry platform (purple readback)",
+   "Threat intel platform (MISP / OpenCTI)"
+  ],
+  "resources": [
+   {
+    "name": "MITRE ATT&CK",
+    "url": "https://attack.mitre.org/"
+   },
+   {
+    "name": "CTID Adversary Emulation Library",
+    "url": "https://github.com/center-for-threat-informed-defense/adversary_emulation_library"
+   },
+   {
+    "name": "Red Team Development and Operations",
+    "url": "https://redteam.guide/"
+   },
+   {
+    "name": "MITRE Engage",
+    "url": "https://engage.mitre.org/"
+   }
+  ],
+  "doneWhen": "A peer-reviewed methodology doc exists in which every infrastructure and attribution control is justified by a risk it mitigates and mapped to a defender-observable signal, and a purple-team readback confirms the blue team can reconstruct your operation timeline.",
+  "pitfall": "Optimizing infrastructure purely for stealth until the engagement produces no usable detection signal or defensible evidence, defeating the purpose of an authorized assessment."
+ },
+ "TR-06": {
+  "overview": "At a professional level this habit becomes a queryable detection knowledge base that ties each technique to a consistent telemetry schema, a testable analytic, and a measured coverage gap. Done well it turns scattered learning into an evidence-backed map of what your sensors can and cannot see, directly improving detection engineering and purple-team planning.",
+  "steps": [
+   "Standardize every entry against a data model (ATT&CK data components / OSSEM) so events and fields normalize across sources rather than free-text notes.",
+   "For each procedure variant, record the exact data component, event, fields, and the log-source configuration (audit policy, Sysmon config) required to see it.",
+   "Emulate procedures in an instrumented lab and diff telemetry across variants to separate robust signals from brittle, easily-evaded ones.",
+   "Encode each detection hypothesis as a Sigma rule and note confidence, expected false-positive sources, and known blind spots.",
+   "Track technique coverage and telemetry gaps as DeTT&CT / Navigator layers so weak spots are visible, not implied.",
+   "Run purple-team validation in VECTR and write the detect/alert outcome back into the notebook entry.",
+   "Reassess entries when log sources, agent configs, or procedure variants change so the notebook stays trustworthy."
+  ],
+  "tools": [
+   "OSSEM",
+   "DeTT&CT",
+   "Sigma",
+   "MITRE ATT&CK Navigator",
+   "VECTR",
+   "MITRE Caldera"
+  ],
+  "resources": [
+   {
+    "name": "MITRE ATT&CK Data Sources",
+    "url": "https://attack.mitre.org/datasources/"
+   },
+   {
+    "name": "OSSEM security event metadata",
+    "url": "https://github.com/OTRF/OSSEM"
+   },
+   {
+    "name": "DeTT&CT coverage tracking",
+    "url": "https://github.com/rabobank-cdc/DeTTECT"
+   },
+   {
+    "name": "MITRE Cyber Analytics Repository (CAR)",
+    "url": "https://car.mitre.org"
+   }
+  ],
+  "doneWhen": "Every logged technique carries a normalized data component, event/field schema, a Sigma-encoded hypothesis with false-positive notes, and a recorded purple-team validation outcome, with coverage gaps rendered on a Navigator layer.",
+  "pitfall": "Treating the notebook as write-only documentation and never confirming the telemetry actually fires, assuming an event exists without verifying the audit policy or sensor config that emits it."
+ },
+ "CAP-3": {
+  "overview": "At capstone level, purple team is a measurement discipline: you emulate a scoped objective against a production-grade EDR and deliver an evidence-backed package that raises the organization's detection coverage and mean-time-to-detect. The output is not a war story but a repeatable test harness plus engineered detections, each tied to a data source, a technique, and a validation result.",
+  "steps": [
+   "Scope a threat-informed objective from a real adversary profile and encode the full plan as an ATT&CK Navigator layer with success criteria per technique.",
+   "Build a controlled, resettable range with the target EDR, tamper protection realistic, and full telemetry (EDR API, Sysmon, Windows/Sysmon event forwarding) shipping to a searchable store.",
+   "Execute in disciplined phases in the lab, capturing detonation timestamps, host context, and an expected-telemetry hypothesis for each action to enable clean detection-vs-noise analysis.",
+   "Reconcile alerts against telemetry to score each technique as blocked / alerted / telemetry-only / no-signal, and record analytic latency and confidence, not just a binary.",
+   "Engineer detections for every gap as Sigma or vendor analytics with tuning notes, expected false-positive sources, and the minimum data source required — validate each by re-running the emulation.",
+   "Track results over time in VECTR so coverage, MTTD, and detection efficacy trend across engagement rounds.",
+   "Deliver a dual report: red-team objective narrative with ATT&CK mapping, and a blue-team detection backlog with owners, data-source gaps, and a re-test plan."
+  ],
+  "tools": [
+   "MITRE ATT&CK Navigator",
+   "CALDERA",
+   "Atomic Red Team",
+   "VECTR",
+   "Sigma / Sigma converters",
+   "Elastic Security or Microsoft Defender/Sentinel"
+  ],
+  "resources": [
+   {
+    "name": "MITRE Engenuity CTID Adversary Emulation Library",
+    "url": "https://github.com/center-for-threat-informed-defense/adversary_emulation_library"
+   },
+   {
+    "name": "MITRE CALDERA",
+    "url": "https://caldera.mitre.org/"
+   },
+   {
+    "name": "SigmaHQ",
+    "url": "https://github.com/SigmaHQ/sigma"
+   },
+   {
+    "name": "VECTR (SRA)",
+    "url": "https://docs.vectr.io/"
+   }
+  ],
+  "doneWhen": "You ship a versioned purple-team package where 100% of objective techniques carry a coverage verdict with latency, every gap has a validated detection re-tested against the emulation, and results are trended in VECTR across at least two rounds.",
+  "pitfall": "Optimizing for a green coverage heatmap. A detection that fires but is drowned in false positives, or that only matches your one atomic invocation, is a metric, not a defense — validate robustness and analyst usability, not just that it lit up once."
+ },
+ "CAP-2": {
+  "overview": "A full-scope capstone proves you can plan, execute, and communicate an authorized external-to-internal engagement with custom tooling and purpose-built C2 while maintaining OPSEC and evidentiary rigor. The deliverable is not a shell count but a defensible narrative that lets a blue team measure their own detection coverage and close the gaps you surfaced.",
+  "steps": [
+   "Author a formal ROE and threat-actor emulation plan: pick a real adversary profile, enumerate the ATT&CK techniques you will exercise, and define abort criteria",
+   "Architect segmented, disposable C2 infrastructure in your lab with redirectors, per-engagement isolation, and teardown procedures documented in advance",
+   "Define OPSEC rules up front: artifact naming, credential handling, cleanup obligations, and what deconfliction data you hand the blue team in real time",
+   "Instrument the environment first so every emulated technique is measured against known telemetry, then run the chain external-to-internal against your own targets",
+   "Maintain a rigorous operator log and evidence chain suitable for a purple-team replay, capturing detections raised, missed, and delayed",
+   "Convert findings into a detection-engineering backlog: per technique, list the data source, a candidate analytic, and the residual risk if unaddressed",
+   "Produce a layered report (executive risk narrative, attack-path walkthrough, and remediation/detection roadmap) and run a debrief that translates it into defender action items"
+  ],
+  "tools": [
+   "MITRE ATT&CK Navigator",
+   "CTID Adversary Emulation Library",
+   "VECTR",
+   "Atomic Red Team (validation)",
+   "Sysmon / Elastic or Splunk (telemetry)",
+   "Ghostwriter (reporting & logging)"
+  ],
+  "resources": [
+   {
+    "name": "CTID Adversary Emulation Library",
+    "url": "https://github.com/center-for-threat-informed-defense/adversary_emulation_library"
+   },
+   {
+    "name": "MITRE ATT&CK",
+    "url": "https://attack.mitre.org/"
+   },
+   {
+    "name": "VECTR by SRA",
+    "url": "https://vectr.io/"
+   },
+   {
+    "name": "SpecterOps Ghostwriter",
+    "url": "https://github.com/GhostManager/Ghostwriter"
+   }
+  ],
+  "doneWhen": "You deliver a full engagement package (ROE, emulation plan, operator log, evidence, and layered report) plus a purple-team coverage matrix showing which emulated techniques were detected, missed, or delayed and the analytic proposed for each gap.",
+  "pitfall": "Optimizing for stealth and technique breadth while under-investing in measurement and reporting, so the exercise produces impressive access but no reproducible detection improvements for the defenders you serve."
+ },
+ "CAP-4": {
+  "overview": "The cloud-to-on-prem pivot is one of the highest-impact moves in modern hybrid attacks, and reasoning about it rigorously is what separates a checklist tester from an operator. This capstone integrates planning, attack-path modeling, ATT&CK mapping, and blue-team-ready reporting into one objective-driven lab exercise that directly strengthens detection and control coverage.",
+  "steps": [
+   "Frame the engagement around a concrete objective and an assumed-breach cloud starting point; write the hypothesis-driven plan and explicit success criteria before execution.",
+   "Stand up a reproducible hybrid lab (cloud tenant + on-prem AD + a sync or federation bridge) with build notes so the exercise is repeatable and shareable.",
+   "Enumerate and graph both the cloud and on-prem terrain, then model trust and identity relationships as an attack graph with multiple candidate branches.",
+   "Prioritize paths by realism and objective-relevance, validate each hop safely in the lab, and note precisely where your assumptions break.",
+   "Map every hop to ATT&CK, capture the exact telemetry it generates, and identify detection and control gaps at each stage.",
+   "Deliver a peer-reviewable capstone report: objective narrative, path graph with alternative branches, evidence, and prioritized remediation the blue team can action.",
+   "Close with a purple-team debrief that tracks detection coverage and outcomes so the findings feed detection engineering."
+  ],
+  "tools": [
+   "BloodHound / AzureHound",
+   "ROADtools (roadrecon)",
+   "MITRE ATT&CK Navigator",
+   "VECTR",
+   "PurpleKnight",
+   "Microsoft Defender for Identity (detection validation)"
+  ],
+  "resources": [
+   {
+    "name": "MITRE ATT&CK Cloud Matrix",
+    "url": "https://attack.mitre.org/matrices/enterprise/cloud/"
+   },
+   {
+    "name": "Center for Threat-Informed Defense (CTID)",
+    "url": "https://mitre-engenuity.org/cybersecurity/center-for-threat-informed-defense/"
+   },
+   {
+    "name": "VECTR (purple-team tracking)",
+    "url": "https://vectr.io/"
+   },
+   {
+    "name": "Microsoft Entra hybrid identity documentation",
+    "url": "https://learn.microsoft.com/en-us/entra/identity/hybrid/"
+   }
+  ],
+  "doneWhen": "You deliver a peer-reviewable capstone report — objective-based attack narrative, ATT&CK-mapped path graph with alternative branches, per-hop telemetry and control-gap analysis, and prioritized blue-team remediation — that a reviewer can reproduce from your lab build notes.",
+  "pitfall": "Falling in love with one 'cool' path and ignoring assumed-breach realism and alternative branches, or ending at the exploit narrative without tying each hop to detection value and remediation."
+ }
+})
