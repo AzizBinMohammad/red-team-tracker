@@ -138,4 +138,7 @@ python3 build_xlsx.py && python3 build_web.py
 Progress is keyed by task **ID**, so keep IDs stable and saved progress survives regeneration.
 (Admins can also add tasks live in the app without touching Python — those are stored per-browser.)
 
+## Contributors
+- Muhand Alsaif
+
 *Authorized labs and environments only.*
