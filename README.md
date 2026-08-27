@@ -17,6 +17,12 @@ an admin panel, and per-user profiles. **No backend, no internet, no build step 
 **Beginner path** — a guided view that shows only the foundation phases with a "what to do next" card and a plain-English guide on each task. Toggle **🎯 Pro / 🎓 Beginner** in the top bar.
 ![Beginner path](screenshots/03-beginner-path.jpg)
 
+**Learning Resources** — a curated shelf (books, YouTube channels, news feeds, references, blogs, practice labs) opened from the top bar. Practice only on systems you're authorized to test.
+![Learning Resources](screenshots/04-resources.jpg)
+
+**Admin panel** — soft-PIN-gated management (default `1337`): profiles, tasks & XP, trophies, weekly challenges, and full data export/import.
+![Admin panel](screenshots/05-admin-panel.jpg)
+
 ## Files
 | File | What it is |
 |---|---|
@@ -24,10 +30,12 @@ an admin panel, and per-user profiles. **No backend, no internet, no build step 
 | `resources.html` | Curated learning-resources page (books, channels, news, references, blogs, practice sites). Linked from the app top bar. |
 | `roadmap.xlsx` | Excel mirror: Dashboard + Roadmap + Levels + Legend, formulas auto-update level/rank/XP. |
 | `tasks_data.py` | **Single source of truth** for the roadmap tasks, XP, ranks, and level curve. |
-| `build_web.py` | Generator — turns `tasks_data.py` into `index.html`. Edit here, then rebuild. |
-| `build_xlsx.py` | Generator for the Excel workbook. |
+| `build_web.py` | Generator — merges `tasks_data.py`, `guides_data.py`, and `details_data.py` into `index.html`. Edit the sources, then rebuild. |
+| `guides_data.py` | Per-task **Beginner** and **Pro** guide content (overview, steps, tools, resources, "done when", pitfall). |
+| `details_data.py` | Authored task detail, reused for the Pro guide where present. |
+| `build_xlsx.py` | Generator for the Excel workbook (`roadmap.xlsx`). |
 | `server.py` | Optional backend (Flask + SQLite) — **login accounts + central user management**. |
-| `run.sh` / `requirements.txt` | Launcher for the backend and its one dependency (Flask). |
+| `run.sh` / `requirements.txt` | Launcher for the backend; `requirements.txt` pins its dependencies — **Flask** (backend) and **openpyxl** (for `build_xlsx.py`). |
 
 ## Two ways to run
 
