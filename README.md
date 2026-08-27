@@ -6,6 +6,17 @@ an admin panel, and per-user profiles. **No backend, no internet, no build step 
 
 **86 roadmap tasks · 30,850 total XP · 30 levels · 7 operator ranks · 8 league tiers · 12 achievements · 11 built-in trophies.**
 
+## Screenshots
+
+**Pro dashboard** — the full roadmap: XP pool, rank/level, completion, and every phase with per-task Guide panels.
+![Pro dashboard](screenshots/01-pro-dashboard.jpg)
+
+**Per-task guide** — click **📖 Guide** on any task for an inline walk-through: overview, steps, tools, resources, "done when", and the common pitfall.
+![Per-task guide panel](screenshots/02-task-guide.jpg)
+
+**Beginner path** — a guided view that shows only the foundation phases with a "what to do next" card and a plain-English guide on each task. Toggle **🎯 Pro / 🎓 Beginner** in the top bar.
+![Beginner path](screenshots/03-beginner-path.jpg)
+
 ## Files
 | File | What it is |
 |---|---|
