@@ -381,12 +381,41 @@ function loadDB(){
   if(d&&d.users&&Object.keys(d.users).length) return normalizeDB(d);
   const s=seed(); localStorage.setItem(KEY,JSON.stringify(s)); return s;
 }
-let DB=loadDB();
-let state;
+let DB=null, state=null;
+let SERVER=false, ME=null, CSRF=null;   // server mode: login accounts via Flask backend
 function cur(){ return DB.users[DB.currentUser]; }
 function reselect(){ state=cur().progress; }
-reselect();
-function save(){ localStorage.setItem(KEY,JSON.stringify(DB)); }
+
+// ---- server API + mode-aware persistence -------------------------------
+// Offline (opened as a file / plain static host): everything lives in localStorage.
+// Server (served by server.py): identity + progress + shared config live in SQLite;
+// admin status is enforced server-side and the client never decides it.
+async function api(method,path,body){
+  const opt={method,headers:{"Accept":"application/json"}};
+  if(body!==undefined){ opt.headers["Content-Type"]="application/json"; opt.body=JSON.stringify(body); }
+  if(method!=="GET" && CSRF) opt.headers["X-CSRF-Token"]=CSRF;
+  let r; try{ r=await fetch(path,opt); }catch(e){ return {ok:false,status:0,j:{error:"network error"}}; }
+  let j={}; try{ j=await r.json(); }catch(e){}
+  return {ok:r.ok,status:r.status,j};
+}
+const _q={};
+function queuePut(path,body){ clearTimeout(_q[path]); _q[path]=setTimeout(async ()=>{
+  const r=await api("PUT",path,body);
+  if(!r.ok) toast("task","Sync failed",(r.j&&r.j.error)||("HTTP "+r.status)); },350); }
+function persistProgress(){ if(!SERVER){ localStorage.setItem(KEY,JSON.stringify(DB)); return; }
+  queuePut("/api/me/progress",{progress:state}); }
+function persistConfig(){ if(!SERVER){ localStorage.setItem(KEY,JSON.stringify(DB)); return; }
+  api("PUT","/api/config",{overrides:DB.overrides,customTasks:DB.customTasks,deleted:DB.deleted,
+    customTrophies:DB.customTrophies,challenges:DB.challenges})
+    .then(r=>{ if(!r.ok) toast("task","Config sync failed",(r.j&&r.j.error)||""); }); }
+function persistUser(uid){ if(!SERVER){ localStorage.setItem(KEY,JSON.stringify(DB)); return; }
+  api("PUT","/api/admin/users/"+uid+"/progress",{progress:DB.users[uid].progress})
+    .then(r=>{ if(!r.ok) toast("task","Save failed",(r.j&&r.j.error)||""); }); }
+function save(){ persistProgress(); }                         // own progress (gameplay)
+function commitConfig(){ persistConfig(); rebuildTasks(); reselect(); renderAll(); adminRender(); }
+function commitUser(uid){ persistUser(uid); renderAll(); adminRender(); }
+function downloadJson(name,obj){ const blob=new Blob([JSON.stringify(obj,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=name; a.click(); URL.revokeObjectURL(url); }
 
 // effective (shared) roadmap tasks = builtins - deleted + overrides + admin custom
 let TASKS=[];
@@ -395,7 +424,6 @@ function rebuildTasks(){
   const base=BUILTIN_TASKS.filter(t=>!del.has(t.id)).map(t=>Object.assign({},t,DB.overrides[t.id]||{}));
   TASKS=base.concat(DB.customTasks.filter(t=>!del.has(t.id)));
 }
-rebuildTasks();
 
 // ================= leveling =================
 function cumXp(L){ let c=0; for(let i=2;i<=L;i++) c += LEVEL_BASE + LEVEL_STEP*(i-1); return c; }
@@ -795,6 +823,10 @@ function openLeaderboard(){
 // ================= admin panel =================
 let adminUnlocked=false, adminTab="users", editTask=null;
 function openAdmin(){
+  if(SERVER){
+    if(!ME || !ME.isAdmin){ toast("task","Admins only","your account is not an admin"); return; }
+    adminTab="users"; editTask=null; return adminRender();     // server enforces admin; no PIN
+  }
   if(!adminUnlocked){
     const pin=prompt("Enter admin PIN (default 1337):");
     if(pin===null) return;
@@ -813,39 +845,60 @@ function adminBody(){
 function adminRender(){
   const labels={users:"👥 Profiles",tasks:"🗂 Tasks",trophies:"🏆 Trophies",challenges:"📅 Challenges",data:"💾 Data"};
   const tabs=["users","tasks","trophies","challenges","data"];
-  const inner=`<div class="mhead"><h3>⚙ Admin Panel</h3><span class="badgePill">local · soft-gated</span>
+  const badge = SERVER ? '<span class="badgePill">server · accounts</span>' : '<span class="badgePill">local · soft-gated</span>';
+  const note = SERVER
+    ? 'You are signed in as an admin. Changes here are written to the server database and enforced server-side.'
+    : 'This panel and its PIN live only in this browser — a convenience gate for a shared machine, <b>not real access control</b>. Anyone with devtools can bypass it.';
+  const inner=`<div class="mhead"><h3>⚙ Admin Panel</h3>${badge}
       <span class="x" data-act="close">✕</span></div>
-    <div class="note">This panel and its PIN live only in this browser — a convenience gate for a shared machine, <b>not real access control</b>. Anyone with devtools can bypass it.</div>
+    <div class="note">${note}</div>
     <div class="tabs">${tabs.map(t=>`<button class="tab ${adminTab===t?"active":""}" data-act="tab" data-tab="${t}">${labels[t]}</button>`).join("")}</div>
     <div id="adminBody">${adminBody()}</div>`;
   let ov=document.getElementById("ov");
   if(ov){ ov.querySelector(".modal").innerHTML=inner; }
   else{ ov=modal(inner); ov.addEventListener("click",onAdminClick); }
-  if(adminTab==="data"){ const f=document.getElementById("importAllFile"); if(f) f.onchange=importAllHandler; }
+  if(adminTab==="data"){
+    if(SERVER){ const f=document.getElementById("importLegacyFile"); if(f) f.onchange=importLegacyHandler; }
+    else{ const f=document.getElementById("importAllFile"); if(f) f.onchange=importAllHandler; }
+  }
 }
 
 function adminUsers(){
   const rows=Object.values(DB.users).map(u=>{ const c=ctxOf(u.progress);
+    const isMe = u.id===DB.currentUser;
+    const acts = SERVER
+      ? `<button class="btn mini" data-act="urename" data-id="${u.id}">Rename</button>
+         <button class="btn mini" data-act="upw" data-id="${u.id}">Set password</button>
+         <button class="btn mini" data-act="uadmin" data-id="${u.id}">${u.isAdmin?"Revoke admin":"Make admin"}</button>
+         <button class="btn mini" data-act="ureset" data-id="${u.id}">Reset</button>
+         <button class="btn mini danger" data-act="udel" data-id="${u.id}">Delete</button>`
+      : `<button class="btn mini" data-act="uswitch" data-id="${u.id}">Switch</button>
+         <button class="btn mini" data-act="urename" data-id="${u.id}">Rename</button>
+         <button class="btn mini" data-act="uadmin" data-id="${u.id}">${u.isAdmin?"Revoke admin":"Make admin"}</button>
+         <button class="btn mini" data-act="ureset" data-id="${u.id}">Reset</button>
+         <button class="btn mini danger" data-act="udel" data-id="${u.id}">Delete</button>`;
     return `<tr>
-      <td>${u.avatar||"🎯"} <b>${escapeHtml(u.name)}</b>${u.id===DB.currentUser?' <span class="badgePill">current</span>':""}</td>
+      <td>${u.avatar||"🎯"} <b>${escapeHtml(u.name)}</b>${isMe?' <span class="badgePill">you</span>':""}</td>
       <td>${u.isAdmin?"✓":""}</td>
       <td class="mono">${c.level}</td><td class="mono">${c.xp.toLocaleString()}</td>
       <td class="mono">${c.rmDone}/${c.rmTotal}</td><td class="mono">${trophyCount(u.progress)}</td>
-      <td>
-        <button class="btn mini" data-act="uswitch" data-id="${u.id}">Switch</button>
-        <button class="btn mini" data-act="urename" data-id="${u.id}">Rename</button>
-        <button class="btn mini" data-act="uadmin" data-id="${u.id}">${u.isAdmin?"Revoke admin":"Make admin"}</button>
-        <button class="btn mini" data-act="ureset" data-id="${u.id}">Reset</button>
-        <button class="btn mini danger" data-act="udel" data-id="${u.id}">Delete</button>
-      </td></tr>`;
+      <td>${acts}</td></tr>`;
   }).join("");
-  return `<table class="tbl"><tr><th>Profile</th><th>Admin</th><th>Lvl</th><th>XP</th><th>Roadmap</th><th>🏆</th><th>Actions</th></tr>${rows}</table>
-    <div class="fbox" style="margin-top:12px"><div class="row">
-      <div class="field" style="flex:2"><label>New profile name</label><input type="text" id="newUserName" placeholder="e.g. Trainee-01"></div>
-      <div class="field" style="max-width:80px"><label>Emoji</label><input type="text" id="newUserAv" maxlength="4" placeholder="🥷"></div>
-      <div class="field" style="max-width:90px"><label>Admin?</label><input type="checkbox" id="newUserAdmin" style="width:auto"></div>
-      <div class="field" style="max-width:110px;align-self:flex-end"><button class="btn" data-act="uadd">＋ Add profile</button></div>
-    </div></div>`;
+  const addForm = SERVER
+    ? `<div class="fbox" style="margin-top:12px"><b style="font-size:12px;color:#fff">Create account</b><div class="row" style="margin-top:6px">
+        <div class="field" style="flex:2"><label>Username</label><input type="text" id="newUserName" placeholder="trainee-01"></div>
+        <div class="field"><label>Password</label><input type="password" id="newUserPass" autocomplete="new-password"></div>
+        <div class="field" style="max-width:80px"><label>Emoji</label><input type="text" id="newUserAv" maxlength="4" placeholder="🥷"></div>
+        <div class="field" style="max-width:70px"><label>Admin?</label><input type="checkbox" id="newUserAdmin" style="width:auto"></div>
+        <div class="field" style="max-width:100px;align-self:flex-end"><button class="btn" data-act="uadd">＋ Create</button></div>
+      </div></div>`
+    : `<div class="fbox" style="margin-top:12px"><div class="row">
+        <div class="field" style="flex:2"><label>New profile name</label><input type="text" id="newUserName" placeholder="e.g. Trainee-01"></div>
+        <div class="field" style="max-width:80px"><label>Emoji</label><input type="text" id="newUserAv" maxlength="4" placeholder="🥷"></div>
+        <div class="field" style="max-width:90px"><label>Admin?</label><input type="checkbox" id="newUserAdmin" style="width:auto"></div>
+        <div class="field" style="max-width:110px;align-self:flex-end"><button class="btn" data-act="uadd">＋ Add profile</button></div>
+      </div></div>`;
+  return `<table class="tbl"><tr><th>${SERVER?"Account":"Profile"}</th><th>Admin</th><th>Lvl</th><th>XP</th><th>Roadmap</th><th>🏆</th><th>Actions</th></tr>${rows}</table>${addForm}`;
 }
 
 function taskForm(){
@@ -967,6 +1020,21 @@ function adminChallenges(){
 }
 
 function adminData(){
+  if(SERVER){
+    return `<div class="fbox"><b style="font-size:12px;color:#fff">Change your password</b><div class="row" style="margin-top:6px">
+        <div class="field"><label>Current</label><input type="password" id="pwOld" autocomplete="current-password"></div>
+        <div class="field"><label>New</label><input type="password" id="pwNew" autocomplete="new-password"></div>
+        <div class="field" style="max-width:150px;align-self:flex-end"><button class="btn" data-act="chpw">Update password</button></div>
+      </div></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" data-act="exportAll">⬇ Export full server backup</button>
+        <button class="btn" data-act="importLegacy">⬆ Import legacy (browser Export ALL)</button>
+        <input type="file" id="importLegacyFile" accept="application/json" style="display:none">
+        <span class="spacer"></span>
+        <button class="btn danger" data-act="wipe">Wipe other accounts + config</button>
+      </div>
+      <div class="note">Export writes every account (incl. password hashes) + shared config to one JSON file — sensitive, keep it safe. Import legacy seeds accounts from the old browser "Export ALL" (each profile's temporary password = its username; set real ones afterward). Wipe deletes all <b>other</b> accounts, clears shared config, and resets your own progress.</div>`;
+  }
   return `<div class="fbox"><div class="row">
       <div class="field"><label>Change admin PIN</label><input type="text" id="newPin" placeholder="new PIN"></div>
       <div class="field" style="max-width:120px;align-self:flex-end"><button class="btn" data-act="setpin">Update PIN</button></div>
@@ -997,7 +1065,7 @@ function saveTask(){
     if(TASKS.some(x=>x.id===idv)||BUILTIN_TASKS.some(x=>x.id===idv)){ alert("ID already exists"); return; }
     DB.customTasks.push(Object.assign({id:idv},rec));
   }
-  save(); rebuildTasks(); renderAll(); adminRender();
+  commitConfig();
 }
 function addTrophy(){
   const g=id=>document.getElementById(id);
@@ -1008,7 +1076,7 @@ function addTrophy(){
   const tid="c"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
   DB.customTrophies.push({id:tid,ico:(g("trIco").value||"🏅").trim()||"🏅",name,
     desc:(g("trDesc").value||"").trim(),tier:g("trTier").value,rule});
-  save(); rebuildTasks(); renderAll(); adminRender();
+  commitConfig();
 }
 function addChallenge(){
   const g=id=>document.getElementById(id);
@@ -1029,7 +1097,7 @@ function addChallenge(){
   DB.challenges.push({id:tid,name,desc:(g("chDesc").value||"").trim(),goalType:type,taskIds,count,
     xp:Math.max(0,parseInt(g("chXp").value)||0),trophyId,startedAt:Date.now(),
     days:Math.max(1,parseInt(g("chDays").value)||7),active:true});
-  save(); rebuildTasks(); renderAll(); checkChallenges(); adminRender();
+  commitConfig(); checkChallenges();
 }
 function exportAll(){
   const blob=new Blob([JSON.stringify(DB,null,2)],{type:"application/json"});
@@ -1047,69 +1115,120 @@ function importAllHandler(e){
     catch(err){ alert("Invalid backup file"); } };
   r.readAsText(file);
 }
+function importLegacyHandler(e){          // server mode: seed accounts from browser "Export ALL"
+  const file=e.target.files[0]; if(!file) return;
+  const r=new FileReader();
+  r.onload=async ()=>{ let d; try{ d=JSON.parse(r.result); }catch(err){ alert("Invalid file"); return; }
+    if(!d.users){ alert("Not a tracker backup (no users)"); return; }
+    const res=await api("POST","/api/admin/import-legacy",d);
+    if(!res.ok){ toast("task","Import failed",(res.j&&res.j.error)||("HTTP "+res.status)); return; }
+    await refreshState(); adminRender();
+    toast("task","Imported "+(res.j.created||0)+" account(s)","temp password = username"); };
+  r.readAsText(file);
+}
 
-function onAdminClick(e){
+async function onAdminClick(e){
   const a=e.target.closest("[data-act]"); if(!a) return;
   const act=a.dataset.act, id=a.dataset.id;
   const g=x=>document.getElementById(x);
-  const rerender=()=>{ save(); rebuildTasks(); reselect(); renderAll(); adminRender(); };
+  const rerender=()=>{ persistConfig(); rebuildTasks(); reselect(); renderAll(); adminRender(); };  // offline: whole-DB write
+  const fail=res=>toast("task","Failed",(res.j&&res.j.error)||("HTTP "+res.status));
+  const done=async res=>{ if(!res.ok) return fail(res); await refreshState(); adminRender(); };
   switch(act){
     case "close": return closeModal();
     case "tab": adminTab=a.dataset.tab; editTask=null; return adminRender();
+    case "tedit": editTask=id; return adminRender();
+    case "tcancel": editTask=null; return adminRender();
 
-    // profiles
-    case "uswitch": DB.currentUser=id; reselect(); save(); renderAll(); checkChallenges(); return adminRender();
-    case "urename": { const n=(prompt("Rename profile:",DB.users[id].name)||"").trim(); if(n){ DB.users[id].name=n; rerender(); } return; }
-    case "uadmin": DB.users[id].isAdmin=!DB.users[id].isAdmin; return rerender();
-    case "ureset": if(confirm("Reset ALL progress for "+DB.users[id].name+"?")){
+    // ---- profiles / accounts ----
+    case "uswitch":                                   // offline only (no switching with login accounts)
+      if(SERVER) return;
+      DB.currentUser=id; reselect(); save(); renderAll(); checkChallenges(); return adminRender();
+    case "urename":
+      if(SERVER){ const n=(prompt("New username:",DB.users[id].name)||"").trim(); if(!n) return;
+        return done(await api("POST","/api/admin/users/"+id+"/rename",{username:n})); }
+      { const n=(prompt("Rename profile:",DB.users[id].name)||"").trim(); if(n){ DB.users[id].name=n; rerender(); } return; }
+    case "uadmin":
+      if(SERVER) return done(await api("POST","/api/admin/users/"+id+"/admin",{is_admin:!DB.users[id].isAdmin}));
+      DB.users[id].isAdmin=!DB.users[id].isAdmin; return rerender();
+    case "upw":                                       // server only: set another user's password
+      if(!SERVER) return;
+      { const p=prompt("New password for "+DB.users[id].name+" (min 6 chars):"); if(!p) return;
+        const r=await api("POST","/api/admin/users/"+id+"/password",{password:p});
+        return r.ok?toast("task","Password set",DB.users[id].name):fail(r); }
+    case "ureset":
+      if(SERVER){ if(!confirm("Reset progress for "+DB.users[id].name+"?")) return;
+        return done(await api("POST","/api/admin/users/"+id+"/reset")); }
+      if(confirm("Reset ALL progress for "+DB.users[id].name+"?")){
         DB.users[id].progress=blankProgress(); DB.users[id].progress._primed=true; rerender(); } return;
-    case "udel": {
-        if(Object.keys(DB.users).length<=1){ alert("Cannot delete the only profile."); return; }
+    case "udel":
+      if(SERVER){ if(!confirm("Delete account "+DB.users[id].name+" and its progress?")) return;
+        return done(await api("DELETE","/api/admin/users/"+id)); }
+      { if(Object.keys(DB.users).length<=1){ alert("Cannot delete the only profile."); return; }
         if(!confirm("Delete profile "+DB.users[id].name+" and its progress?")) return;
         delete DB.users[id]; if(DB.currentUser===id) DB.currentUser=Object.keys(DB.users)[0];
         reselect(); return rerender(); }
-    case "uadd": { const n=(g("newUserName").value||"").trim(); if(!n){ alert("Name required"); return; }
+    case "uadd":
+      if(SERVER){ const n=(g("newUserName").value||"").trim(), p=(g("newUserPass").value||"");
+        if(!n||!p){ alert("Username and password required"); return; }
+        return done(await api("POST","/api/admin/users",
+          {username:n,password:p,is_admin:g("newUserAdmin").checked,avatar:(g("newUserAv").value||"").trim()})); }
+      { const n=(g("newUserName").value||"").trim(); if(!n){ alert("Name required"); return; }
         addUser(n,(g("newUserAv").value||"").trim(),g("newUserAdmin").checked); return rerender(); }
 
-    // tasks
-    case "tedit": editTask=id; return adminRender();
-    case "tcancel": editTask=null; return adminRender();
+    // ---- tasks (shared config) ----
     case "tsave": return saveTask();
     case "tdel": {
         if(!confirm("Delete task "+id+"? Built-ins can be restored later.")) return;
         if(DB.customTasks.some(x=>x.id===id)) DB.customTasks=DB.customTasks.filter(x=>x.id!==id);
         else if(!DB.deleted.includes(id)) DB.deleted.push(id);
-        delete DB.overrides[id]; if(editTask===id) editTask=null; return rerender(); }
+        delete DB.overrides[id]; if(editTask===id) editTask=null; return commitConfig(); }
     case "trestore": if(confirm("Restore built-in tasks and discard all edits/deletions? Custom tasks are kept.")){
-        DB.deleted=DB.deleted.filter(x=>DB.customTasks.some(c=>c.id===x)); DB.overrides={}; editTask=null; rerender(); } return;
+        DB.deleted=DB.deleted.filter(x=>DB.customTasks.some(c=>c.id===x)); DB.overrides={}; editTask=null; commitConfig(); } return;
 
-    // trophies
+    // ---- trophies ----
     case "trophadd": return addTrophy();
-    case "trophdel": DB.customTrophies=(DB.customTrophies||[]).filter(x=>x.id!==id); return rerender();
+    case "trophdel": DB.customTrophies=(DB.customTrophies||[]).filter(x=>x.id!==id); return commitConfig();
     case "grgrant": { const uu=g("grUser").value, tt=g("grTroph").value;
         DB.users[uu].progress.granted[tt]=true;
         if(!DB.users[uu].progress.trophyShown.includes(tt)) DB.users[uu].progress.trophyShown.push(tt);
-        toast("task","Trophy granted",DB.users[uu].name); return rerender(); }
+        toast("task","Trophy granted",DB.users[uu].name); return commitUser(uu); }
     case "grrevoke": { const uu=g("grUser").value, tt=g("grTroph").value;
-        delete DB.users[uu].progress.granted[tt]; return rerender(); }
+        delete DB.users[uu].progress.granted[tt]; return commitUser(uu); }
 
-    // challenges
+    // ---- challenges ----
     case "chadd": return addChallenge();
     case "chdel": { const c=(DB.challenges||[]).find(x=>x.id===id);
         if(c&&c.trophyId) DB.customTrophies=(DB.customTrophies||[]).filter(t=>t.id!==c.trophyId);
-        DB.challenges=(DB.challenges||[]).filter(x=>x.id!==id); return rerender(); }
-    case "chtoggle": { const c=(DB.challenges||[]).find(x=>x.id===id); if(c) c.active=!c.active; return rerender(); }
-    case "chrestart": { const c=(DB.challenges||[]).find(x=>x.id===id);
-        if(c){ c.startedAt=Date.now(); for(const u of Object.values(DB.users)){ if(u.progress.challengesDone) delete u.progress.challengesDone[id]; } }
-        return rerender(); }
+        DB.challenges=(DB.challenges||[]).filter(x=>x.id!==id); return commitConfig(); }
+    case "chtoggle": { const c=(DB.challenges||[]).find(x=>x.id===id); if(c) c.active=!c.active; return commitConfig(); }
+    case "chrestart": { const c=(DB.challenges||[]).find(x=>x.id===id); if(!c) return;
+        c.startedAt=Date.now();
+        if(SERVER){ persistConfig();
+          for(const [uidk,u] of Object.entries(DB.users)){
+            if(u.progress.challengesDone && u.progress.challengesDone[id]){ delete u.progress.challengesDone[id]; persistUser(uidk); } }
+          rebuildTasks(); renderAll(); adminRender(); return; }
+        for(const u of Object.values(DB.users)){ if(u.progress.challengesDone) delete u.progress.challengesDone[id]; }
+        return commitConfig(); }
 
-    // data
-    case "setpin": { const p=(g("newPin").value||"").trim(); if(p){ DB.settings.adminPin=p; save(); toast("task","PIN updated",""); } return; }
-    case "exportAll": return exportAll();
-    case "importAll": return g("importAllFile").click();
-    case "wipe": if(confirm("WIPE everything — all profiles, edits, trophies, challenges? This cannot be undone.")){
-        localStorage.removeItem(KEY); localStorage.removeItem(OLDKEY);
-        DB=loadDB(); reselect(); rebuildTasks(); primeAll(); adminUnlocked=false; closeModal(); renderAll(); } return;
+    // ---- data ----
+    case "setpin": { if(SERVER) return; const p=(g("newPin").value||"").trim();
+        if(p){ DB.settings.adminPin=p; save(); toast("task","PIN updated",""); } return; }
+    case "chpw": { if(!SERVER) return; const r=await api("POST","/api/me/password",{old:g("pwOld").value,new:g("pwNew").value});
+        return r.ok?toast("task","Password updated",""):fail(r); }
+    case "exportAll":
+        if(SERVER){ const r=await api("GET","/api/admin/export"); if(!r.ok) return fail(r);
+          downloadJson("rt-tracker-server-backup.json",r.j); return toast("task","Full server backup exported",""); }
+        return exportAll();
+    case "importLegacy": if(SERVER) g("importLegacyFile").click(); return;
+    case "importAll": if(!SERVER) g("importAllFile").click(); return;
+    case "wipe":
+        if(SERVER){ if(!confirm("WIPE all OTHER accounts, clear shared config, and reset YOUR own progress? This cannot be undone.")) return;
+          const r=await api("POST","/api/admin/wipe"); if(!r.ok) return fail(r);
+          await refreshState(); adminRender(); return toast("task","Wiped","other accounts removed"); }
+        if(confirm("WIPE everything — all profiles, edits, trophies, challenges? This cannot be undone.")){
+          localStorage.removeItem(KEY); localStorage.removeItem(OLDKEY);
+          DB=loadDB(); reselect(); rebuildTasks(); primeAll(); adminUnlocked=false; closeModal(); renderAll(); } return;
   }
 }
 
@@ -1159,8 +1278,74 @@ function renderAll(){
 }
 
 // ================= boot =================
-function init(){ rebuildTasks(); primeAll(); initTopbar(); initToolbar(); renderAll(); checkChallenges(); }
-init();
+function startApp(){
+  rebuildTasks(); primeAll(); initTopbar(); initToolbar(); applyModeUI(); renderAll(); checkChallenges();
+}
+function applyModeUI(){
+  if(SERVER){
+    $("#switchUser").textContent="Log out";
+    $("#switchUser").onclick=doLogout;
+    $("#profileChip").onclick=openAccountMenu;
+  }
+}
+function applyServerState(s){
+  ME=s.me; CSRF=s.csrf;
+  DB={ users:{}, currentUser:String(s.me.id), settings:{},
+       overrides:(s.config&&s.config.overrides)||{}, customTasks:(s.config&&s.config.customTasks)||[],
+       deleted:(s.config&&s.config.deleted)||[], customTrophies:(s.config&&s.config.customTrophies)||[],
+       challenges:(s.config&&s.config.challenges)||[] };
+  for(const [idk,u] of Object.entries(s.users||{})){
+    DB.users[idk]={ id:idk, name:u.name, avatar:u.avatar, isAdmin:u.isAdmin, progress:normProg(u.progress||{}) };
+  }
+  reselect();
+}
+async function refreshState(){ const r=await api("GET","/api/state");
+  if(r.ok){ applyServerState(r.j); rebuildTasks(); renderAll(); } return r.ok; }
+async function doLogout(){ await api("POST","/api/logout"); location.reload(); }
+function openAccountMenu(){
+  const ov=modal(`<div class="mhead"><h3>${cur().avatar||"👤"} ${escapeHtml(cur().name)}</h3><span class="x" data-act="close">✕</span></div>
+    <div class="fbox"><b style="font-size:12px;color:#fff">Change your password</b>
+      <div class="field"><label>Current password</label><input type="password" id="pwOld" autocomplete="current-password"></div>
+      <div class="field"><label>New password</label><input type="password" id="pwNew" autocomplete="new-password"></div>
+      <div class="row" style="margin-top:6px"><button class="btn" data-act="chpw">Update password</button></div></div>
+    <div class="row"><button class="btn danger" data-act="logout">Log out</button><button class="btn" data-act="close">Close</button></div>`);
+  ov.addEventListener("click",async e=>{
+    const a=e.target.closest("[data-act]"); if(!a) return; const act=a.dataset.act;
+    if(act==="close") return closeModal();
+    if(act==="logout") return doLogout();
+    if(act==="chpw"){ const r=await api("POST","/api/me/password",{old:$("#pwOld").value,new:$("#pwNew").value});
+      if(!r.ok) toast("task","Failed",(r.j&&r.j.error)||""); else { closeModal(); toast("task","Password updated",""); } }
+  });
+}
+function showLogin(msg){
+  const ov=document.createElement("div"); ov.className="overlay"; ov.id="loginOv";
+  ov.innerHTML=`<div class="modal" style="max-width:390px">
+    <div class="mhead"><h3>🔐 Red Team Tracker — Sign in</h3></div>
+    <div class="note" id="loginErr" style="border-left-color:var(--red);${msg?"":"display:none"}">${msg?escapeHtml(msg):""}</div>
+    <div class="field"><label>Username</label><input type="text" id="loginUser" autocomplete="username"></div>
+    <div class="field"><label>Password</label><input type="password" id="loginPass" autocomplete="current-password"></div>
+    <div class="row" style="margin-top:10px"><button class="btn" id="loginBtn" style="flex:1">Sign in</button></div>
+    <div class="note" style="border-left-color:var(--muted)">First run? The admin username &amp; password were printed in the server console.</div>
+  </div>`;
+  document.body.appendChild(ov);
+  const submit=async ()=>{
+    const r=await api("POST","/api/login",{username:$("#loginUser").value.trim(),password:$("#loginPass").value});
+    if(!r.ok){ const e=$("#loginErr"); e.style.display=""; e.textContent=(r.j&&r.j.error)||"Login failed"; return; }
+    CSRF=r.j.csrf; ov.remove();
+    const st=await api("GET","/api/state"); if(st.ok){ applyServerState(st.j); startApp(); }
+  };
+  $("#loginBtn").onclick=submit;
+  $("#loginPass").onkeydown=e=>{ if(e.key==="Enter") submit(); };
+  $("#loginUser").focus();
+}
+async function boot(){
+  let r; try{ r=await fetch("/api/state",{headers:{"Accept":"application/json"}}); }catch(e){ r=null; }
+  if(r && r.status===401){ SERVER=true; showLogin(); return; }
+  if(r && r.ok){ let s=null; try{ s=await r.json(); }catch(e){}
+    if(s && s.me){ SERVER=true; applyServerState(s); startApp(); return; } }
+  SERVER=false; DB=loadDB(); reselect(); startApp();     // offline localStorage mode
+}
+boot();
 </script>
 </body>
 </html>

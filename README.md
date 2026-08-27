@@ -14,16 +14,57 @@ an admin panel, and per-user profiles. **No backend, no internet, no build step 
 | `tasks_data.py` | **Single source of truth** for the roadmap tasks, XP, ranks, and level curve. |
 | `build_web.py` | Generator — turns `tasks_data.py` into `index.html`. Edit here, then rebuild. |
 | `build_xlsx.py` | Generator for the Excel workbook. |
+| `server.py` | Optional backend (Flask + SQLite) — **login accounts + central user management**. |
+| `run.sh` / `requirements.txt` | Launcher for the backend and its one dependency (Flask). |
 
-## Run it
+## Two ways to run
+
+The same `index.html` works in **two modes** and auto-detects which:
+
+### A) Standalone (offline) — no server
+Everything lives in the browser's localStorage; profiles are per-browser, admin is a soft PIN.
 ```bash
-# Option A — serve it (recommended; guarantees localStorage persistence)
-python3 -m http.server 8000 --directory /home/Fedora/red-team-tracker
-# then open http://localhost:8000
-
-# Option B — open the file directly
+# serve statically (recommended; guarantees localStorage persistence)
+python3 -m http.server 8000 --directory /home/Fedora/red-team-tracker   # → http://localhost:8000
+# or just open the file
 xdg-open /home/Fedora/red-team-tracker/index.html
 ```
+
+### B) Server mode — login accounts + database (Flask + SQLite)
+Real accounts (scrypt-hashed passwords), server-enforced admin, per-account progress in SQLite,
+and central user management. **The page detects the backend automatically** — when it's served by
+`server.py` it shows a login screen and talks to the API; opened any other way it falls back to mode A.
+```bash
+# one-time: create the venv + install Flask
+python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt
+
+# run it  (first run prints a generated admin username + password to the console)
+./run.sh                          # → http://127.0.0.1:8000
+# set your own admin instead:  RTT_ADMIN_USER=me RTT_ADMIN_PASS=secret ./run.sh
+```
+Then open `http://127.0.0.1:8000`, log in, and manage users from **⚙ Admin ▸ Profiles**
+(create / rename / set-password / promote / reset / delete). Change your own password from the
+top-bar profile chip.
+
+**Backend CLI & env:**
+```bash
+./run.sh --create-admin alice s3cret     # add an admin
+./run.sh --set-password bob newpass      # reset a password
+./run.sh --list-users                    # list accounts
+./run.sh --import-legacy rt-tracker-all.json   # seed accounts from a mode-A "Export ALL"
+# env: RTT_HOST RTT_PORT RTT_DB RTT_SECURE(=1 behind TLS) RTT_ADMIN_USER RTT_ADMIN_PASS
+```
+
+**Security notes (server mode):** passwords are scrypt-hashed; sessions are HttpOnly + SameSite=Lax
+cookies; state-changing API calls require an `X-CSRF-Token`; every admin/self action is authorized
+server-side; login is throttled. It binds to `127.0.0.1` by default — **do not expose it without TLS
+and `RTT_SECURE=1`.** The runtime files (`tracker.db`, `.secret_key`, `.venv/`) are gitignored and
+must never be committed.
+
+**Migrating from standalone → server:** in mode A, Admin ▸ Data ▸ **Export ALL** to get
+`rt-tracker-all.json`, then `./run.sh --import-legacy rt-tracker-all.json` (or the in-app
+Admin ▸ Data ▸ *Import legacy*). Each old profile becomes an account whose **temporary password is
+its username** — reset them afterward.
 
 ## Features
 

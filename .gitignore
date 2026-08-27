@@ -6,3 +6,9 @@ index.html.bak
 # local runtime backups exported from the app
 rt-progress-*.json
 rt-tracker-all.json
+# --- backend runtime (never commit) ---
+.venv/
+tracker.db
+tracker.db-wal
+tracker.db-shm
+.secret_key
