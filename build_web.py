@@ -417,6 +417,7 @@ function loadDB(){
 }
 let DB=null, state=null;
 let SERVER=false, ME=null, CSRF=null;   // server mode: login accounts via Flask backend
+let SRVSTATS=null;                       // F0: server-authoritative {xp,level,rank,league,...} for me
 function cur(){ return DB.users[DB.currentUser]; }
 function reselect(){ state=cur().progress; }
 
@@ -437,7 +438,20 @@ function queuePut(path,body){ clearTimeout(_q[path]); _q[path]=setTimeout(async 
   const r=await api("PUT",path,body);
   if(!r.ok) toast("task","Sync failed",(r.j&&r.j.error)||("HTTP "+r.status)); },350); }
 function persistProgress(){ if(!SERVER){ localStorage.setItem(KEY,JSON.stringify(DB)); return; }
-  queuePut("/api/me/progress",{progress:state}); }
+  // F0: server is the XP/awards authority — apply what it returns (authoritative stats + server-owned fields)
+  SRVSTATS=null;                    // show optimistic JS calc until the server confirms
+  clearTimeout(_q["me"]); _q["me"]=setTimeout(async ()=>{
+    const r=await api("PUT","/api/me/progress",{progress:state});
+    if(!r.ok){ toast("task","Sync failed",(r.j&&r.j.error)||("HTTP "+r.status)); return; }
+    applyServerSelf(r.j);
+  },350); }
+function applyServerSelf(j){
+  if(j && j.server){ const s=j.server;
+    state.bonusXp=s.bonusXp||0; state.granted=s.granted||{}; state.challengesDone=s.challengesDone||{}; }
+  if(j && j.stats) SRVSTATS=j.stats;
+  (j&&j.awarded||[]).forEach(name=>setTimeout(()=>toast("trophy","🏆 Challenge complete!",name),300));
+  renderAll();
+}
 function persistConfig(){ if(!SERVER){ localStorage.setItem(KEY,JSON.stringify(DB)); return; }
   api("PUT","/api/config",{overrides:DB.overrides,customTasks:DB.customTasks,deleted:DB.deleted,
     customTrophies:DB.customTrophies,challenges:DB.challenges})
@@ -504,6 +518,12 @@ function phaseDone(ph){ const ts=TASKS.filter(t=>t.phase===ph); return ts.length
 function allTrophies(){ return BUILTIN_TROPHIES.concat(DB.customTrophies||[]); }
 function ctxOf(p){ const xp=xpOf(p); return {xp, level:levelFromXp(xp), done:doneOf(p),
   rmDone:rmDone(p), rmTotal:TASKS.length}; }
+// F0: prefer server-authoritative per-user stats when present; fall back to the JS calc (offline)
+function userStats(u){
+  if(SERVER && u && u.stats) return {xp:u.stats.xp, level:u.stats.level, done:u.stats.rmDone,
+    rmDone:u.stats.rmDone, rmTotal:u.stats.rmTotal};
+  return ctxOf((u&&u.progress)||{done:{}});
+}
 function phaseDoneP(p,ph){ const ts=TASKS.filter(t=>t.phase===ph); return ts.length>0 && ts.every(t=>p.done[t.id]); }
 function trophyEarnedP(p,tr){
   if(p.granted && p.granted[tr.id]) return true;
@@ -527,7 +547,9 @@ function primeAll(){
     allTrophies().forEach(t=>{ if(trophyEarnedP(p,t) && !p.trophyShown.includes(t.id)) p.trophyShown.push(t.id); });
     p._primed=true;
   }
-  save();
+  // F0: priming only suppresses local toasts — persist offline; in server mode it stays local
+  // (so it never fires a load-time PUT that would clobber the authoritative SRVSTATS).
+  if(!SERVER) save();
 }
 
 // ================= weekly challenges =================
@@ -544,6 +566,7 @@ function chalMet(c,p){ const pr=chalProgress(c,p); return pr.need>0 && pr.have>=
 function timeLeft(ms){ if(ms<=0) return "0h"; const h=Math.floor(ms/3600000);
   if(h>=24) return Math.floor(h/24)+"d "+(h%24)+"h"; return h+"h"; }
 function checkChallenges(){
+  if(SERVER) return;               // F0: awards are server-authoritative; client only displays them
   let awarded=false;
   for(const c of activeChallenges()){
     if(state.challengesDone && state.challengesDone[c.id]) continue;
@@ -595,7 +618,10 @@ function phaseList(){ const s=[...PHASE_ORDER]; TASKS.forEach(t=>{ if(!s.include
 function checkSvg(){return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';}
 
 function renderHeader(){
-  const xp=earnedXp(), pool=totalXp(), L=levelFromXp(xp);
+  // F0: in server mode display the server-authoritative xp/level once known; JS calc is offline/optimistic
+  const auth = (SERVER && SRVSTATS) ? SRVSTATS : null;
+  const xp = auth ? auth.xp : earnedXp();
+  const pool=totalXp(), L = auth ? auth.level : levelFromXp(xp);
   const {rank,nextLvl}=rankFor(L); const lg=leagueFor(L);
   const base=cumXp(L), next=cumXp(L+1), into=xp-base, span=next-base;
   const pct = span>0 ? Math.min(100, into/span*100) : 100;
@@ -750,7 +776,7 @@ function toggleTask(id){
   if(!wasDone){
     toast("task","＋ "+t.xp+" XP", (t.id||"task")+" complete");
     if(after>before) setTimeout(()=>toast("level","LEVEL UP → "+after, rankFor(after).rank+" · "+leagueFor(after).name),350);
-    checkNewAch(); checkNewTrophies(); checkChallenges();
+    checkNewAch(); checkNewTrophies(); checkChallenges();   // checkChallenges no-ops in server mode
   }
 }
 
@@ -819,7 +845,7 @@ function addUser(name,avatar,isAdmin){
 }
 
 function openUserMenu(){
-  const rows=Object.values(DB.users).map(u=>{ const c=ctxOf(u.progress);
+  const rows=Object.values(DB.users).map(u=>{ const c=userStats(u);
     return `<div class="lbRow ${u.id===DB.currentUser?"me":""}" data-act="switch" data-id="${u.id}" style="cursor:pointer">
       <span class="lbAv">${u.avatar||"🎯"}</span>
       <div class="lbName"><b>${escapeHtml(u.name)}</b><small>Lvl ${c.level} · ${leagueFor(c.level).name}${u.isAdmin?" · admin":""}</small></div>
@@ -842,7 +868,7 @@ function openUserMenu(){
 }
 
 function openLeaderboard(){
-  const arr=Object.values(DB.users).map(u=>({u,c:ctxOf(u.progress),tr:trophyCount(u.progress)}))
+  const arr=Object.values(DB.users).map(u=>({u,c:userStats(u),tr:trophyCount(u.progress)}))
     .sort((a,b)=>b.c.xp-a.c.xp);
   const medal=i=> i===0?"🥇":i===1?"🥈":i===2?"🥉":("#"+(i+1));
   const rows=arr.map((r,i)=>`<div class="lbRow ${r.u.id===DB.currentUser?"me":""}">
@@ -898,7 +924,7 @@ function adminRender(){
 }
 
 function adminUsers(){
-  const rows=Object.values(DB.users).map(u=>{ const c=ctxOf(u.progress);
+  const rows=Object.values(DB.users).map(u=>{ const c=userStats(u);
     const isMe = u.id===DB.currentUser;
     const acts = SERVER
       ? `<button class="btn mini" data-act="urename" data-id="${u.id}">Rename</button>
@@ -1323,13 +1349,14 @@ function applyModeUI(){
   }
 }
 function applyServerState(s){
-  ME=s.me; CSRF=s.csrf;
+  ME=s.me; CSRF=s.csrf; SRVSTATS=(s.me&&s.me.stats)||null;   // F0: authoritative stats for me
   DB={ users:{}, currentUser:String(s.me.id), settings:{},
        overrides:(s.config&&s.config.overrides)||{}, customTasks:(s.config&&s.config.customTasks)||[],
        deleted:(s.config&&s.config.deleted)||[], customTrophies:(s.config&&s.config.customTrophies)||[],
        challenges:(s.config&&s.config.challenges)||[] };
   for(const [idk,u] of Object.entries(s.users||{})){
-    DB.users[idk]={ id:idk, name:u.name, avatar:u.avatar, isAdmin:u.isAdmin, progress:normProg(u.progress||{}) };
+    DB.users[idk]={ id:idk, name:u.name, avatar:u.avatar, isAdmin:u.isAdmin,
+                    stats:u.stats||null, progress:normProg(u.progress||{}) };   // F0: per-user authoritative stats
   }
   reselect();
 }

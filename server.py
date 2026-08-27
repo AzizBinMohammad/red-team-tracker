@@ -109,14 +109,18 @@ def admin_required(fn):
         return fn(*a, **k)
     return w
 
-def public_user(row, include_progress=True):
+def public_user(row, tasks=None, include_progress=True):
     d = {"id": row["id"], "name": row["username"], "username": row["username"],
          "avatar": row["avatar"], "isAdmin": bool(row["is_admin"])}
+    prog = {}
+    try:
+        prog = json.loads(row["progress"] or "{}")
+    except Exception:
+        prog = {}
     if include_progress:
-        try:
-            d["progress"] = json.loads(row["progress"] or "{}")
-        except Exception:
-            d["progress"] = {}
+        d["progress"] = prog
+    if tasks is not None:                            # F0d: authoritative per-user stats
+        d["stats"] = compute_stats(prog, tasks)
     return d
 
 def throttled(ip, user):
@@ -140,6 +144,155 @@ def valid_json_text(s, limit=MAX_BODY):
         return None
     return t
 
+# ---------------------------------------------------------------- XP authority (F0)
+# The server is the SOLE authority for XP/level and challenge awards. It reads task XP
+# from config (never from the request), whitelists which progress fields a user may write,
+# and computes the same leveling curve the client uses for offline mode.
+try:
+    from tasks_data import TASKS as _BUILTIN_TUPLES, RANKS as _RANKS, LEVEL_BASE as _LB, LEVEL_STEP as _LS
+except Exception:                                    # degrade, don't crash, if the module moves
+    _BUILTIN_TUPLES, _RANKS, _LB, _LS = [], [(1, "Initiate")], 200, 55
+
+_LEAGUES = [(1,"Beginner"),(4,"Novice"),(8,"Skilled"),(12,"Advanced"),
+            (16,"Expert"),(20,"Master"),(24,"Pro"),(28,"Legend")]
+MIN_TS  = 1577836800000          # 2020-01-01 in epoch ms — reject anything older
+SKEW_MS = 5 * 60 * 1000          # tolerate 5 min of clock skew on "now"
+PROGRESS_MAX = int(os.environ.get("RTT_PROGRESS_MAX", str(1024 * 1024)))   # per-account cap (F0f)
+WRITABLE_SELF = ("done","collapsed","achShown","trophyShown","personal","evidence","activity")
+# server-owned, NEVER writable by a self PUT: bonusXp, granted, challengesDone, xp, level
+
+def xp_for_diff(d):
+    d = max(1, min(5, int(d or 0)));  return 50*d + 25*d*(d-1)
+
+def cum_xp(L):
+    c = 0
+    for i in range(2, L+1): c += _LB + _LS*(i-1)
+    return c
+
+def level_from_xp(xp):
+    L = 1
+    while cum_xp(L+1) <= xp: L += 1
+    return L
+
+def rank_for(level):
+    r = _RANKS[0][1]
+    for lvl, name in _RANKS:
+        if level >= lvl: r = name
+        else: break
+    return r
+
+def league_for(level):
+    n = _LEAGUES[0][1]
+    for lvl, name in _LEAGUES:
+        if level >= lvl: n = name
+    return n
+
+def effective_tasks(cfg):
+    """Roadmap tasks the admin config actually exposes: builtins − deleted + overrides + custom."""
+    deleted = set(cfg.get("deleted") or [])
+    overrides = cfg.get("overrides") or {}
+    tasks = {}
+    for t in _BUILTIN_TUPLES:                        # (id, phase, track, cat, title, diff, xp)
+        if t[0] in deleted: continue
+        tasks[t[0]] = {"xp": int(t[6]), "diff": int(t[5]), "phase": t[1]}
+    for tid, ov in overrides.items():
+        if tid in tasks and isinstance(ov, dict):
+            if "xp" in ov:   tasks[tid]["xp"]   = int(ov["xp"])
+            if "diff" in ov: tasks[tid]["diff"] = int(ov["diff"])
+            if "phase" in ov: tasks[tid]["phase"] = ov["phase"]
+    for ct in (cfg.get("customTasks") or []):
+        tid = ct.get("id")
+        if tid and tid not in deleted:
+            tasks[tid] = {"xp": int(ct.get("xp") or 0), "diff": int(ct.get("diff") or 1),
+                          "phase": ct.get("phase")}
+    return tasks
+
+def _personal_xp_map(progress):
+    return {p.get("id"): xp_for_diff(p.get("diff"))
+            for p in (progress.get("personal") or []) if p.get("id")}
+
+def compute_stats(progress, tasks):
+    """Authoritative {xp, level, rank, league, rmDone, rmTotal} from stored (trusted) progress."""
+    done = progress.get("done") or {}
+    pmap = _personal_xp_map(progress)
+    xp = 0
+    for tid in done:
+        if tid in tasks:   xp += tasks[tid]["xp"]
+        elif tid in pmap:  xp += pmap[tid]
+    xp += int(progress.get("bonusXp") or 0)
+    lvl = level_from_xp(xp)
+    rm_done = sum(1 for tid in done if tid in tasks)
+    return {"xp": xp, "level": lvl, "rank": rank_for(lvl), "league": league_for(lvl),
+            "rmDone": rm_done, "rmTotal": len(tasks)}
+
+def _bound_map(m, limit):     return dict(list(m.items())[:limit]) if isinstance(m, dict) else {}
+def _bound_list(x, limit):    return x[:limit] if isinstance(x, list) else []
+
+def sanitize_self_progress(stored, client, tasks, now_ms):
+    """Merge only whitelisted fields from the client onto stored; server-owned fields survive.
+    Fake task ids, forged timestamps, and self-awarded XP are dropped here."""
+    out = dict(stored) if isinstance(stored, dict) else {}
+    out.setdefault("granted", {}); out.setdefault("bonusXp", 0); out.setdefault("challengesDone", {})
+    # personal first — done validation references personal ids; xp is recomputed, never trusted
+    if isinstance(client.get("personal"), list):
+        clean = []
+        for p in client["personal"][:500]:
+            if not isinstance(p, dict) or not p.get("id"): continue
+            d = max(1, min(5, int(p.get("diff") or 1)))
+            clean.append({"id": str(p["id"])[:64], "title": str(p.get("title") or "")[:300],
+                          "cat": str(p.get("cat") or "Personal")[:60], "diff": d,
+                          "xp": xp_for_diff(d), "createdAt": int(p.get("createdAt") or now_ms)})
+        out["personal"] = clean
+    pids = {p["id"] for p in out.get("personal", [])}
+    if isinstance(client.get("done"), dict):
+        cd = {}
+        for tid, ts in client["done"].items():
+            if tid not in tasks and tid not in pids:      # only real / own tasks
+                continue
+            try: ts = int(ts)
+            except (TypeError, ValueError): continue
+            if ts < MIN_TS or ts > now_ms + SKEW_MS:      # no forged past/future
+                continue
+            cd[tid] = ts
+        out["done"] = cd
+    if isinstance(client.get("collapsed"), dict):  out["collapsed"]   = _bound_map(client["collapsed"], 200)
+    if isinstance(client.get("achShown"), list):   out["achShown"]    = _bound_list(client["achShown"], 200)
+    if isinstance(client.get("trophyShown"), list):out["trophyShown"] = _bound_list(client["trophyShown"], 500)
+    if isinstance(client.get("evidence"), dict):   out["evidence"]    = _bound_map(client["evidence"], 500)
+    if isinstance(client.get("activity"), dict):   out["activity"]    = _bound_map(client["activity"], 400)
+    if "_primed" in client:                        out["_primed"]     = bool(client["_primed"])
+    return out
+
+def _completed_in_window(progress, start, end, tasks):
+    done = progress.get("done") or {}
+    pids = {p.get("id") for p in (progress.get("personal") or [])}
+    return sum(1 for tid, ts in done.items()
+               if (tid in tasks or tid in pids) and isinstance(ts, int) and start <= ts <= end)
+
+def evaluate_challenges(progress, cfg, tasks, now_ms):
+    """Award bonus XP + trophies for met challenges — server-side, idempotent (no double-award)."""
+    done = progress.get("done") or {}
+    cd = progress.setdefault("challengesDone", {})
+    granted = progress.setdefault("granted", {})
+    awarded = []
+    for c in (cfg.get("challenges") or []):
+        cid = c.get("id")
+        if not c.get("active") or not cid or cid in cd: continue
+        start = int(c.get("startedAt") or 0); end = start + int(c.get("days") or 7) * 86400000
+        if now_ms > end: continue
+        if c.get("goalType") == "count":
+            need = int(c.get("count") or 0)
+            met = need > 0 and _completed_in_window(progress, start, end, tasks) >= need
+        else:
+            ids = c.get("taskIds") or []
+            met = len(ids) > 0 and all(i in done for i in ids)
+        if met:
+            cd[cid] = now_ms
+            progress["bonusXp"] = int(progress.get("bonusXp") or 0) + int(c.get("xp") or 0)
+            if c.get("trophyId"): granted[c["trophyId"]] = True
+            awarded.append(c.get("name") or cid)
+    return awarded
+
 # ---------------------------------------------------------------- app
 def create_app():
     app = Flask(__name__, static_folder=None)
@@ -157,6 +310,10 @@ def create_app():
         resp.headers["X-Frame-Options"] = "DENY"
         resp.headers["Referrer-Policy"] = "no-referrer"
         return resp
+
+    @app.errorhandler(413)
+    def too_large(e):                                # F0f: oversized body -> JSON 413
+        return jsonify(error="payload too large"), 413
 
     @app.before_request
     def csrf_guard():
@@ -213,20 +370,38 @@ def create_app():
     @login_required
     def state():
         con = get_db(); me = current_user()
-        users = {str(r["id"]): public_user(r) for r in con.execute("SELECT * FROM users ORDER BY id")}
-        return jsonify(me=_me(me), users=users, config=load_config(con), csrf=session.get("csrf"))
+        cfg = load_config(con); tasks = effective_tasks(cfg); now = int(time.time() * 1000)
+        # evaluate the caller's challenges on read too, so awards apply even without a fresh PUT
+        try: mprog = json.loads(me["progress"] or "{}")
+        except Exception: mprog = {}
+        if evaluate_challenges(mprog, cfg, tasks, now):
+            con.execute("UPDATE users SET progress=? WHERE id=?",
+                        (json.dumps(mprog, ensure_ascii=False), me["id"])); con.commit()
+            me = current_user()
+        users = {str(r["id"]): public_user(r, tasks) for r in con.execute("SELECT * FROM users ORDER BY id")}
+        return jsonify(me={**_me(me), "stats": compute_stats(mprog, tasks)},
+                       users=users, config=cfg, csrf=session.get("csrf"))
 
     # ---- self ----
     @app.put("/api/me/progress")
     @login_required
     def me_progress():
-        data = request.get_json(silent=True) or {}
-        txt = valid_json_text(data.get("progress"))
-        if txt is None:
+        client = (request.get_json(silent=True) or {}).get("progress")
+        if not isinstance(client, dict):
             return jsonify(error="invalid progress payload"), 400
-        get_db().execute("UPDATE users SET progress=? WHERE id=?", (txt, session["uid"]))
-        get_db().commit()
-        return jsonify(ok=True)
+        con = get_db(); me = current_user()
+        try: stored = json.loads(me["progress"] or "{}")
+        except Exception: stored = {}
+        cfg = load_config(con); tasks = effective_tasks(cfg); now = int(time.time() * 1000)
+        merged = sanitize_self_progress(stored, client, tasks, now)       # F0b/F0c: whitelist + validate
+        awarded = evaluate_challenges(merged, cfg, tasks, now)            # F0e: server-side awards
+        txt = json.dumps(merged, ensure_ascii=False)
+        if len(txt.encode("utf-8")) > PROGRESS_MAX:                       # F0f
+            return jsonify(error="progress too large"), 413
+        con.execute("UPDATE users SET progress=? WHERE id=?", (txt, me["id"])); con.commit()
+        return jsonify(ok=True, stats=compute_stats(merged, tasks), awarded=awarded,  # F0d: authoritative
+                       server={"bonusXp": merged.get("bonusXp", 0), "granted": merged.get("granted", {}),
+                               "challengesDone": merged.get("challengesDone", {})})
 
     @app.put("/api/me/avatar")
     @login_required

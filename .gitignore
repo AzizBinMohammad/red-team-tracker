@@ -12,3 +12,4 @@ tracker.db
 tracker.db-wal
 tracker.db-shm
 .secret_key
+.backups/

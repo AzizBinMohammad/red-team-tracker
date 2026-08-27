@@ -61,6 +61,14 @@ server-side; login is throttled. It binds to `127.0.0.1` by default — **do not
 and `RTT_SECURE=1`.** The runtime files (`tracker.db`, `.secret_key`, `.venv/`) are gitignored and
 must never be committed.
 
+**XP is server-authoritative.** In server mode a client can't self-award: the server computes
+XP/level from task values in the config (never from the request), whitelists which progress fields
+you may write (`done, collapsed, achShown, trophyShown, personal, evidence, activity`) and rejects
+writes to `bonusXp/granted/challengesDone/xp/level`, drops completions for unknown task IDs and
+forged (future / pre-2020) timestamps, recomputes personal-task XP from its difficulty, evaluates
+challenge awards server-side in one step (no double-award), and caps request bodies (413). The
+leaderboard shows these authoritative numbers.
+
 **Migrating from standalone → server:** in mode A, Admin ▸ Data ▸ **Export ALL** to get
 `rt-tracker-all.json`, then `./run.sh --import-legacy rt-tracker-all.json` (or the in-app
 Admin ▸ Data ▸ *Import legacy*). Each old profile becomes an account whose **temporary password is
