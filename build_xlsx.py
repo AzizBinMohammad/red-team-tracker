@@ -8,7 +8,8 @@ from openpyxl.formatting.rule import FormulaRule, ColorScaleRule
 from openpyxl.utils import get_column_letter
 from tasks_data import TASKS, RANKS, LEVEL_BASE, LEVEL_STEP
 
-OUT = "/home/Fedora/red-team-tracker/roadmap.xlsx"
+import os
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "roadmap.xlsx")
 
 # ---- palette ----
 DARK   = "0D1117"

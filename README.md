@@ -21,6 +21,7 @@ an admin panel, and per-user profiles. **No backend, no internet, no build step 
 | File | What it is |
 |---|---|
 | `index.html` | Self-contained local web app. Just open it. All state lives in your browser's localStorage. |
+| `resources.html` | Curated learning-resources page (books, channels, news, references, blogs, practice sites). Linked from the app top bar. |
 | `roadmap.xlsx` | Excel mirror: Dashboard + Roadmap + Levels + Legend, formulas auto-update level/rank/XP. |
 | `tasks_data.py` | **Single source of truth** for the roadmap tasks, XP, ranks, and level curve. |
 | `build_web.py` | Generator — turns `tasks_data.py` into `index.html`. Edit here, then rebuild. |
@@ -36,9 +37,9 @@ The same `index.html` works in **two modes** and auto-detects which:
 Everything lives in the browser's localStorage; profiles are per-browser, admin is a soft PIN.
 ```bash
 # serve statically (recommended; guarantees localStorage persistence)
-python3 -m http.server 8000 --directory /home/Fedora/red-team-tracker   # → http://localhost:8000
+python3 -m http.server 8000 --directory .   # → http://localhost:8000
 # or just open the file
-xdg-open /home/Fedora/red-team-tracker/index.html
+xdg-open index.html
 ```
 
 ### B) Server mode — login accounts + database (Flask + SQLite)
@@ -131,6 +132,7 @@ awarded the XP and trophy automatically. "Restart" resets the clock so everyone 
 ## Extend / customize the roadmap
 Edit `tasks_data.py` (add tasks, change XP, tune `LEVEL_BASE` / `LEVEL_STEP` / `RANKS`), then:
 ```bash
+pip install openpyxl        # one-time: build_xlsx.py needs it
 python3 build_xlsx.py && python3 build_web.py
 ```
 Progress is keyed by task **ID**, so keep IDs stable and saved progress survives regeneration.

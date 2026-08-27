@@ -345,6 +345,7 @@ h2.sec{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--mu
     <button class="btn" id="switchUser">Switch profile ▾</button>
     <span class="spacer"></span>
     <button class="btn modeToggle" id="modeToggle" title="Toggle Beginner / Pro view">🎯 Pro</button>
+    <a class="btn" href="resources.html" title="Curated learning resources">📚 Resources</a>
     <button class="btn" id="btnLeaders">🏆 Leaderboard</button>
     <button class="btn" id="btnAdmin">⚙ Admin</button>
   </div>
@@ -574,9 +575,6 @@ async function api(method,path,body){
   return {ok:r.ok,status:r.status,j};
 }
 const _q={};
-function queuePut(path,body){ clearTimeout(_q[path]); _q[path]=setTimeout(async ()=>{
-  const r=await api("PUT",path,body);
-  if(!r.ok) toast("task","Sync failed",(r.j&&r.j.error)||("HTTP "+r.status)); },350); }
 function persistProgress(){ if(!SERVER){ localStorage.setItem(KEY,JSON.stringify(DB)); return; }
   // F0: server is the XP/awards authority — apply what it returns (authoritative stats + server-owned fields)
   SRVSTATS=null;                    // show optimistic JS calc until the server confirms

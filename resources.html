@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learning Resources · Red Team Mastery Tracker</title>
+<style>
+:root{--bg:#0a0e14;--panel:#0f1621;--line:#1d2735;--txt:#d7e0ea;--muted:#7183;--muted:#6f7d90;
+--accent:#4a9dff;--accent2:#6db3ff;--gold:#e5b567;}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#12203a 0%,var(--bg) 60%);
+color:var(--txt);font:15px/1.6 ui-sans-serif,system-ui,Segoe UI,Roboto,sans-serif}
+a{color:var(--accent2);text-decoration:none}a:hover{text-decoration:underline}
+header{max-width:1080px;margin:0 auto;padding:40px 24px 8px}
+header .back{font-size:13px;color:var(--muted)}
+header h1{margin:.2em 0;font-size:28px;letter-spacing:1px}
+header h1 .g{color:var(--gold)}
+header p{color:var(--muted);max-width:720px}
+.grid{max-width:1080px;margin:0 auto;padding:16px 24px 80px;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
+.cat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.cat h2{font-size:16px;margin:.1em 0 .1em;letter-spacing:.5px}
+.cat .cdesc{color:var(--muted);font-size:12.5px;margin:.2em 0 .8em}
+ul.reslist{list-style:none;margin:0;padding:0}
+ul.reslist li{padding:8px 0;border-top:1px solid var(--line)}
+ul.reslist li:first-child{border-top:0}
+ul.reslist a{font-weight:600;font-size:14px}
+ul.reslist .why{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+footer{max-width:1080px;margin:0 auto;padding:0 24px 60px;color:#3a465c;font-size:12px;text-align:center}
+</style></head>
+<body>
+<header>
+  <div class="back"><a href="index.html">← Back to the Tracker</a></div>
+  <h1>Learning <span class="g">Resources</span></h1>
+  <p>A curated shelf for the intermediate&nbsp;→ elite red-teamer journey: the books, channels, feeds, references, blogs, and hands-on labs worth your time. Practice only on systems you are authorized to test.</p>
+</header>
+<div class="grid">
+<section class="cat"><h2>📚 Books</h2><p class="cdesc">Field-defining reads. Work through them, don&#x27;t just shelve them.</p><ul class="reslist"><li><a href="https://portswigger.net/web-security/web-application-hackers-handbook" target="_blank" rel="noopener noreferrer">The Web Application Hacker&#x27;s Handbook</a><span class="why">The web-app bible (pairs with the free PortSwigger Academy).</span></li>
+<li><a href="https://securepla.net/" target="_blank" rel="noopener noreferrer">The Hacker Playbook 3 — Peter Kim</a><span class="why">Practical red-team playbook, engagement-flavoured.</span></li>
+<li><a href="https://nostarch.com/pentesting" target="_blank" rel="noopener noreferrer">Penetration Testing — Georgia Weidman</a><span class="why">The classic hands-on intro; still the best first book.</span></li>
+<li><a href="https://nostarch.com/hacking2.htm" target="_blank" rel="noopener noreferrer">The Art of Exploitation — Jon Erickson</a><span class="why">Understand exploitation from the memory up.</span></li>
+<li><a href="https://nostarch.com/malware" target="_blank" rel="noopener noreferrer">Practical Malware Analysis</a><span class="why">The reference for static/dynamic analysis fundamentals.</span></li>
+<li><a href="https://nostarch.com/black-hat-python2E" target="_blank" rel="noopener noreferrer">Black Hat Python (2e)</a><span class="why">Tooling and offensive scripting patterns in Python.</span></li>
+<li><a href="https://nostarch.com/bug-bounty-bootcamp" target="_blank" rel="noopener noreferrer">Bug Bounty Bootcamp — Vickie Li</a><span class="why">Modern web bug hunting, end to end.</span></li>
+<li><a href="https://github.com/tanc7/hacking-books" target="_blank" rel="noopener noreferrer">Red Team Field Manual (RTFM)</a><span class="why">Terse command reference for the field.</span></li></ul></section>
+<section class="cat"><h2>▶️ YouTube Channels</h2><p class="cdesc">Watch someone think out loud — the fastest way to absorb methodology.</p><ul class="reslist"><li><a href="https://www.youtube.com/@ippsec" target="_blank" rel="noopener noreferrer">IppSec</a><span class="why">Hack The Box walkthroughs; the gold standard for methodology.</span></li>
+<li><a href="https://www.youtube.com/@_JohnHammond" target="_blank" rel="noopener noreferrer">John Hammond</a><span class="why">Malware analysis, CTFs, tooling deep-dives.</span></li>
+<li><a href="https://www.youtube.com/@LiveOverflow" target="_blank" rel="noopener noreferrer">LiveOverflow</a><span class="why">Low-level, binary exploitation, and how bugs really work.</span></li>
+<li><a href="https://www.youtube.com/@STOKfredrik" target="_blank" rel="noopener noreferrer">STÖK</a><span class="why">Bug bounty mindset and recon craft.</span></li>
+<li><a href="https://www.youtube.com/@NahamSec" target="_blank" rel="noopener noreferrer">NahamSec</a><span class="why">Recon, bug bounty, and community interviews.</span></li>
+<li><a href="https://www.youtube.com/@TCMSecurityAcademy" target="_blank" rel="noopener noreferrer">TCM Security</a><span class="why">Practical pentest courses and career guidance.</span></li>
+<li><a href="https://www.youtube.com/@13Cubed" target="_blank" rel="noopener noreferrer">13Cubed</a><span class="why">DFIR and Windows internals — know the defender&#x27;s view.</span></li></ul></section>
+<section class="cat"><h2>📰 News &amp; Feeds</h2><p class="cdesc">Stay current on what&#x27;s actually being exploited in the wild.</p><ul class="reslist"><li><a href="https://therecord.media/" target="_blank" rel="noopener noreferrer">The Record (Recorded Future)</a><span class="why">Serious, well-sourced security journalism.</span></li>
+<li><a href="https://www.bleepingcomputer.com/" target="_blank" rel="noopener noreferrer">BleepingComputer</a><span class="why">Breaking breaches, ransomware, and vuln news.</span></li>
+<li><a href="https://krebsonsecurity.com/" target="_blank" rel="noopener noreferrer">Krebs on Security</a><span class="why">Deep investigative reporting on cybercrime.</span></li>
+<li><a href="https://thehackernews.com/" target="_blank" rel="noopener noreferrer">The Hacker News</a><span class="why">High-volume daily security headlines.</span></li>
+<li><a href="https://www.darkreading.com/" target="_blank" rel="noopener noreferrer">Dark Reading</a><span class="why">Enterprise-security analysis and trends.</span></li>
+<li><a href="https://isc.sans.edu/" target="_blank" rel="noopener noreferrer">SANS Internet Storm Center</a><span class="why">Daily practitioner diaries on emerging threats.</span></li></ul></section>
+<section class="cat"><h2>📄 References &amp; Public Articles</h2><p class="cdesc">The canon you&#x27;ll return to on every engagement.</p><ul class="reslist"><li><a href="https://attack.mitre.org/" target="_blank" rel="noopener noreferrer">MITRE ATT&amp;CK</a><span class="why">The shared language of adversary techniques.</span></li>
+<li><a href="https://owasp.org/www-project-top-ten/" target="_blank" rel="noopener noreferrer">OWASP Top 10</a><span class="why">The web-risk baseline everyone should know.</span></li>
+<li><a href="https://book.hacktricks.xyz/" target="_blank" rel="noopener noreferrer">HackTricks</a><span class="why">Sprawling, practical methodology wiki.</span></li>
+<li><a href="https://www.ired.team/" target="_blank" rel="noopener noreferrer">ired.team (Red Team Notes)</a><span class="why">Concise, reproducible technique notes.</span></li>
+<li><a href="https://github.com/swisskyrepo/PayloadsAllTheThings" target="_blank" rel="noopener noreferrer">PayloadsAllTheThings</a><span class="why">The payload/technique cheat-sheet repo.</span></li>
+<li><a href="https://thedfirreport.com/" target="_blank" rel="noopener noreferrer">The DFIR Report</a><span class="why">Real intrusion write-ups — see attacks end-to-end.</span></li></ul></section>
+<section class="cat"><h2>✍️ Blogs &amp; Research</h2><p class="cdesc">Where the new tradecraft is published first.</p><ul class="reslist"><li><a href="https://posts.specterops.io/" target="_blank" rel="noopener noreferrer">SpecterOps</a><span class="why">AD, C2, and detection research at the frontier.</span></li>
+<li><a href="https://www.trustedsec.com/blog/" target="_blank" rel="noopener noreferrer">TrustedSec</a><span class="why">Offensive tooling and engagement insights.</span></li>
+<li><a href="https://www.outflank.nl/blog/" target="_blank" rel="noopener noreferrer">Outflank</a><span class="why">Advanced red-team tradecraft and evasion research.</span></li>
+<li><a href="https://portswigger.net/research" target="_blank" rel="noopener noreferrer">PortSwigger Research</a><span class="why">Cutting-edge web-attack classes (and Burp).</span></li>
+<li><a href="https://googleprojectzero.blogspot.com/" target="_blank" rel="noopener noreferrer">Google Project Zero</a><span class="why">World-class vulnerability research write-ups.</span></li>
+<li><a href="https://www.rapid7.com/blog/" target="_blank" rel="noopener noreferrer">Rapid7 Blog</a><span class="why">Vuln analysis, Metasploit, and research.</span></li></ul></section>
+<section class="cat"><h2>🧪 Practice Sites &amp; Labs</h2><p class="cdesc">Reading is not skill. Build the reps here — on systems you&#x27;re authorized to attack.</p><ul class="reslist"><li><a href="https://www.hackthebox.com/" target="_blank" rel="noopener noreferrer">Hack The Box</a><span class="why">Boxes, Pro Labs, and a huge community.</span></li>
+<li><a href="https://academy.hackthebox.com/" target="_blank" rel="noopener noreferrer">HTB Academy</a><span class="why">Structured, guided offensive learning paths.</span></li>
+<li><a href="https://tryhackme.com/" target="_blank" rel="noopener noreferrer">TryHackMe</a><span class="why">Beginner-friendly guided rooms and paths.</span></li>
+<li><a href="https://portswigger.net/web-security" target="_blank" rel="noopener noreferrer">PortSwigger Web Security Academy</a><span class="why">Free, best-in-class web-vuln labs.</span></li>
+<li><a href="https://pentesterlab.com/" target="_blank" rel="noopener noreferrer">PentesterLab</a><span class="why">Focused, hands-on web and code-review exercises.</span></li>
+<li><a href="https://www.vulnhub.com/" target="_blank" rel="noopener noreferrer">VulnHub</a><span class="why">Downloadable vulnerable VMs for offline labs.</span></li>
+<li><a href="https://overthewire.org/wargames/" target="_blank" rel="noopener noreferrer">OverTheWire</a><span class="why">Classic wargames for fundamentals.</span></li>
+<li><a href="https://www.root-me.org/" target="_blank" rel="noopener noreferrer">Root-Me</a><span class="why">Hundreds of challenges across categories.</span></li>
+<li><a href="https://cyberdefenders.org/" target="_blank" rel="noopener noreferrer">CyberDefenders</a><span class="why">Blue-team/DFIR labs — know both sides.</span></li>
+<li><a href="https://www.offsec.com/labs/" target="_blank" rel="noopener noreferrer">OffSec Proving Grounds</a><span class="why">OSCP-style practice targets.</span></li></ul></section>
+</div>
+<footer>Curated for the Red Team Mastery Tracker · links open in a new tab · <em>authorized labs and environments only</em></footer>
+</body></html>
