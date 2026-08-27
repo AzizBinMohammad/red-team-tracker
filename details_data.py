@@ -410,4 +410,8 @@ DETAILS = {
   "Run a benign beacon in lab and observe its callback pattern in your SIEM.",
  ],
  "tools": ["Cobalt Strike / Sliver / Mythic", "redirectors (nginx/Apache)", "your SIEM", "Wireshark"],
- "resources": R(("The C2 Matrix", "https://www.thec
+ "resources": R(("The C2 Matrix", "https://www.thec2matrix.com"), ("Cobalt Strike documentation", "https://hstechdocs.helpsystems.com/manuals/cobaltstrike/current/userguide/content/topics/welcome_main.htm"), ("Sliver wiki", "https://github.com/BishopFox/sliver/wiki")),
+ "doneWhen": "You can draw a full C2 chain (operator -> team server -> redirector -> beacon) from memory and explain how sleep/jitter and a malleable profile change its network signature.",
+ "pitfall": "Running a beacon with default profile and cadence in a monitored lab and assuming that reflects real OPSEC - default C2 traffic is the most-signatured thing on the internet.",
+},
+}

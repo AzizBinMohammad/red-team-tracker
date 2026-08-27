@@ -23,7 +23,8 @@ access control.
 import json
 from tasks_data import TASKS, RANKS, LEVEL_BASE, LEVEL_STEP
 
-OUT = "/home/Fedora/red-team-tracker/index.html"
+import os
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index.html")
 
 tasks_json = json.dumps([
     {"id": t[0], "phase": t[1], "track": t[2], "cat": t[3],
@@ -31,6 +32,39 @@ tasks_json = json.dumps([
     for t in TASKS
 ])
 ranks_json = json.dumps(RANKS)
+
+# ---- Per-task GUIDES (beginner + pro), merged from three sources -------------
+# Pro variant reuses the authored detail in details_data.DETAILS where present,
+# otherwise guides_data.PRO; beginner variant comes from guides_data.BEGINNER.
+try:
+    from guides_data import BEGINNER as _BEGINNER, PRO as _PRO
+except Exception:
+    _BEGINNER, _PRO = {}, {}
+try:
+    from details_data import DETAILS as _DETAILS
+except Exception:
+    _DETAILS = {}
+
+def _details_to_pro(d):
+    return {
+        "overview": d.get("why", ""),
+        "steps": d.get("how", []),
+        "tools": d.get("tools", []),
+        "resources": d.get("resources", []),
+        "doneWhen": d.get("doneWhen", ""),
+        "pitfall": d.get("pitfall", ""),
+    }
+
+GUIDES = {}
+for _t in TASKS:
+    _id = _t[0]
+    _pro = _PRO.get(_id) or (_details_to_pro(_DETAILS[_id]) if _id in _DETAILS else None)
+    GUIDES[_id] = {"beginner": _BEGINNER.get(_id), "pro": _pro}
+guides_json = json.dumps(GUIDES, ensure_ascii=False)
+
+_have_beg = sum(1 for g in GUIDES.values() if g["beginner"])
+_have_pro = sum(1 for g in GUIDES.values() if g["pro"])
+print(f"GUIDES: {len(GUIDES)} tasks | beginner authored: {_have_beg} | pro authored: {_have_pro}")
 
 TEMPLATE = r"""<!doctype html>
 <html lang="en">
@@ -129,7 +163,48 @@ a{color:var(--accent2)}
 
 /* ---- task rows ---- */
 .task{display:flex;align-items:flex-start;gap:12px;padding:11px 12px;border-radius:10px;margin:4px 2px;
-  border:1px solid transparent;transition:background .15s,border-color .15s}
+  border:1px solid transparent;transition:background .15s,border-color .15s;flex-wrap:wrap}
+
+/* ---------------- Beginner/Pro mode + per-task guides ---------------- */
+.modeToggle.on{border-color:var(--gold);color:var(--gold);background:#1a150a}
+.gBtn{margin-left:2px;background:transparent;border:1px solid var(--line);color:var(--muted);
+  border-radius:20px;font-size:10px;padding:2px 9px;cursor:pointer;font-family:inherit;transition:.15s}
+.gBtn:hover{border-color:var(--accent2);color:var(--accent2)}
+.gBtn.on{border-color:var(--accent2);color:#fff;background:#12233b}
+.taskGuide{flex-basis:100%;width:100%;margin-top:8px}
+.guideBody{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent2);
+  border-radius:9px;padding:12px 14px;font-size:13px}
+.guideBody .gOver{margin:.1em 0 .7em;color:var(--txt)}
+.guideBody .gSec{margin:.55em 0}
+.guideBody h5{margin:.2em 0 .35em;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.guideBody ol{margin:.2em 0;padding-left:1.25em}
+.guideBody ol li{margin:.2em 0}
+.gtools{display:flex;flex-wrap:wrap;gap:5px}
+.gtool{font-size:11px;padding:2px 8px;border-radius:6px;background:#0c1830;border:1px solid #22406a;color:var(--accent2)}
+.gres{display:flex;flex-wrap:wrap;gap:5px 14px}
+.gres a{font-size:12px}.gres .gnolink{font-size:12px;color:var(--muted)}
+.guideBody .gDone{border-top:1px dashed var(--line);padding-top:.5em}
+.guideBody .gDone h5{color:var(--greenb)} .guideBody .gDone p{color:#9fe0ad;margin:.2em 0}
+.guideBody .gPit h5{color:var(--amber)} .guideBody .gPit p{color:#e6c98a;margin:.2em 0}
+.gEmpty{color:var(--muted);font-style:italic}
+/* Beginner "what to do next" home panel */
+#beginnerHome{background:linear-gradient(180deg,#12233b 0%,var(--panel) 70%);border:1px solid #22406a;
+  border-radius:14px;padding:16px 18px;margin:4px 2px 16px;box-shadow:var(--shadow)}
+.bnHead{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.bnTag{font-weight:700;letter-spacing:.5px;color:var(--gold)}
+.bnProg{color:var(--muted);font-size:12px}.bnProg b{color:var(--txt)}
+.bnNext{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:14px}
+.bnNextTop{display:flex;align-items:center;gap:9px;margin-bottom:4px}
+.bnLbl{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent2);font-weight:700}
+.bnTitle{font-size:15px;font-weight:600;margin:.15em 0 .7em;color:#fff}
+.bnActions{display:flex;align-items:center;gap:12px;margin-top:10px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.primary:hover{background:#3b8dff}
+.bnXp{color:var(--gold);font-weight:700;font-size:13px}
+.bnDone{background:#0d1f11;border:1px solid #1c3a22;color:#9fe0ad;border-radius:11px;padding:14px}
+.bnNote{color:var(--muted);font-size:12px;margin-top:12px;line-height:1.6}
+/* In beginner mode, quiet the pro-only chrome */
+body.beginner #challengeWrap{display:none}
 .task:hover{background:#0f1824;border-color:var(--line)}
 .task.done{opacity:.62}
 .task.done .ttitle{text-decoration:line-through;text-decoration-color:var(--muted)}
@@ -269,6 +344,7 @@ h2.sec{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--mu
     </div>
     <button class="btn" id="switchUser">Switch profile ▾</button>
     <span class="spacer"></span>
+    <button class="btn modeToggle" id="modeToggle" title="Toggle Beginner / Pro view">🎯 Pro</button>
     <button class="btn" id="btnLeaders">🏆 Leaderboard</button>
     <button class="btn" id="btnAdmin">⚙ Admin</button>
   </div>
@@ -299,6 +375,8 @@ h2.sec{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--mu
     <div class="card"><div class="k">Total XP Pool</div><div class="v mono" id="sPool">0</div></div>
     <div class="card"><div class="k">Completion</div><div class="v" id="sPct">0%</div></div>
   </div>
+
+  <div id="beginnerHome" hidden></div>
 
   <div id="challengeWrap"></div>
 
@@ -343,6 +421,68 @@ h2.sec{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--mu
 <script>
 const BUILTIN_TASKS = __TASKS_JSON__;
 const RANKS = __RANKS_JSON__;
+const GUIDES = __GUIDES_JSON__;
+
+// ===================== Beginner/Pro mode + per-task guides =====================
+const FOUNDATION_PHASES = ["Phase 1","Phase 2"];   // shown in Beginner mode
+let UIMODE = (function(){ try{ return localStorage.getItem("rt-mode")==="beginner"?"beginner":"pro"; }catch(e){ return "pro"; } })();
+function guideFor(id){ const g=GUIDES[id]; if(!g) return null; return g[UIMODE] || g.pro || g.beginner || null; }
+function setMode(m){
+  UIMODE = (m==="beginner") ? "beginner" : "pro";
+  try{ localStorage.setItem("rt-mode", UIMODE); }catch(e){}
+  document.body.classList.toggle("beginner", UIMODE==="beginner");
+  syncModeBtn(); renderAll();
+}
+function syncModeBtn(){
+  const b=document.getElementById("modeToggle"); if(!b) return;
+  b.textContent = UIMODE==="beginner" ? "🎓 Beginner" : "🎯 Pro";
+  b.classList.toggle("on", UIMODE==="beginner");
+  b.title = UIMODE==="beginner" ? "Guided view — foundation phases only. Click for the full Pro roadmap."
+                                : "Full roadmap. Click for the simplified guided Beginner view.";
+}
+function guideHtml(id){
+  const g=guideFor(id);
+  if(!g) return `<div class="guideBody"><div class="gEmpty">No guide authored for this task yet.</div></div>`;
+  const li =a=>(a||[]).map(x=>`<li>${escapeHtml(x)}</li>`).join("");
+  const chips=a=>(a||[]).map(x=>`<span class="gtool">${escapeHtml(x)}</span>`).join("");
+  const res =a=>(a||[]).map(r=> (r&&r.url)
+      ? `<a href="${escapeAttr(r.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(r.name)}</a>`
+      : `<span class="gnolink">${escapeHtml(r?r.name:"")}</span>`).join("");
+  return `<div class="guideBody">
+    ${g.overview?`<p class="gOver">${escapeHtml(g.overview)}</p>`:""}
+    ${g.steps&&g.steps.length?`<div class="gSec"><h5>Steps</h5><ol>${li(g.steps)}</ol></div>`:""}
+    ${g.tools&&g.tools.length?`<div class="gSec"><h5>Tools</h5><div class="gtools">${chips(g.tools)}</div></div>`:""}
+    ${g.resources&&g.resources.length?`<div class="gSec"><h5>Resources</h5><div class="gres">${res(g.resources)}</div></div>`:""}
+    ${g.doneWhen?`<div class="gSec gDone"><h5>✓ Done when</h5><p>${escapeHtml(g.doneWhen)}</p></div>`:""}
+    ${g.pitfall?`<div class="gSec gPit"><h5>⚠ Pitfall</h5><p>${escapeHtml(g.pitfall)}</p></div>`:""}
+  </div>`;
+}
+function renderBeginnerHome(){
+  const host=document.getElementById("beginnerHome"); if(!host) return;
+  if(UIMODE!=="beginner"){ host.innerHTML=""; host.hidden=true; return; }
+  host.hidden=false;
+  const found=TASKS.filter(t=>FOUNDATION_PHASES.includes(t.phase));
+  const next=found.find(t=>!state.done[t.id]);
+  const doneN=found.filter(t=>state.done[t.id]).length;
+  const pct=found.length?Math.round(doneN/found.length*100):0;
+  let html=`<div class="bnHead"><span class="bnTag">🎓 Beginner path</span>
+      <span class="bnProg"><b>${doneN}</b> / ${found.length} foundation tasks · ${pct}%</span></div>`;
+  if(next){
+    html+=`<div class="bnNext">
+        <div class="bnNextTop"><span class="bnLbl">What to do next</span><span class="chip id">${next.id}</span>
+          <span class="diff" title="difficulty ${next.diff}/5">${"★".repeat(next.diff)}${"☆".repeat(5-next.diff)}</span></div>
+        <div class="bnTitle">${escapeHtml(next.title)}</div>
+        ${guideHtml(next.id)}
+        <div class="bnActions"><button class="btn primary" data-bndone="${next.id}">✓ Mark done &amp; continue</button>
+          <span class="bnXp">＋${next.xp} XP</span></div>
+      </div>`;
+  } else {
+    html+=`<div class="bnDone">🎉 You've completed every foundation task. Switch to <b>Pro mode</b> (top bar) to take on the full ${TASKS.length}-task roadmap.</div>`;
+  }
+  html+=`<div class="bnNote">Beginner mode shows only the foundation phases (Phase&nbsp;1 &amp; 2) with a step-by-step guide on each task. When you're ready, switch to <b>Pro mode</b> for all ${TASKS.length} tasks and every phase.</div>`;
+  host.innerHTML=html;
+  const b=host.querySelector("[data-bndone]"); if(b) b.onclick=()=>toggleTask(b.getAttribute("data-bndone"));
+}
 const LEVEL_BASE = __LEVEL_BASE__, LEVEL_STEP = __LEVEL_STEP__;
 const KEY="rt_tracker_v2", OLDKEY="rt_tracker_v1";
 const PHASE_ORDER = ["Phase 1","Phase 2","Phase 3","Phase 4","Phase 5","Phase 6","Tracks","Capstone"];
@@ -709,6 +849,7 @@ function renderPhases(){
   const host=$("#phases"); host.innerHTML="";
   const filtering = $("#q").value||$("#fPhase").value||$("#fTrack").value||$("#fCat").value||$("#fStatus").value;
   for(const ph of phaseList()){
+    if(UIMODE==="beginner" && !FOUNDATION_PHASES.includes(ph)) continue;   // Beginner mode: foundation phases only
     const all=TASKS.filter(t=>t.phase===ph);
     if(!all.length) continue;
     const shown=all.filter(passFilter);
@@ -734,6 +875,7 @@ function renderPhases(){
       const d=!!state.done[t.id];
       const row=document.createElement("div");
       row.className="task"+(d?" done":"");
+      const hasGuide=!!guideFor(t.id);
       row.innerHTML=`
         <div class="chk" data-id="${t.id}" role="checkbox" aria-checked="${d}" tabindex="0">${checkSvg()}</div>
         <div class="tbody">
@@ -743,9 +885,11 @@ function renderPhases(){
             <span class="chip cat">${escapeHtml(t.cat)}</span>
             <span class="chip track">${escapeHtml(t.track)}</span>
             <span class="diff" title="difficulty ${t.diff}/5">${"★".repeat(t.diff)}${"☆".repeat(5-t.diff)}</span>
+            ${hasGuide?`<button class="gBtn" data-guide="${t.id}" aria-expanded="false">📖 Guide</button>`:""}
           </div>
         </div>
-        <div class="xpTag">${t.xp} XP</div>`;
+        <div class="xpTag">${t.xp} XP</div>
+        <div class="taskGuide" data-gid="${t.id}" hidden></div>`;
       body.appendChild(row);
     }
     host.appendChild(sec);
@@ -762,6 +906,19 @@ function bindRows(){
     const toggle=()=>toggleTask(c.dataset.id);
     c.onclick=toggle;
     c.onkeydown=e=>{ if(e.key===" "||e.key==="Enter"){e.preventDefault();toggle();} };
+  });
+  document.querySelectorAll("#phases .gBtn").forEach(b=>{
+    b.onclick=()=>{
+      const id=b.getAttribute("data-guide");
+      const row=b.closest(".task");
+      const drawer=row && row.querySelector('.taskGuide[data-gid="'+id+'"]');
+      if(!drawer) return;
+      const open=drawer.hasAttribute("hidden");
+      if(open){ if(!drawer.dataset.filled){ drawer.innerHTML=guideHtml(id); drawer.dataset.filled="1"; } drawer.removeAttribute("hidden"); }
+      else drawer.setAttribute("hidden","");
+      b.setAttribute("aria-expanded", open?"true":"false");
+      b.classList.toggle("on", open);
+    };
   });
 }
 
@@ -1334,12 +1491,18 @@ function initToolbar(){
 
 function renderAll(){
   rebuildTasks(); refreshFilters();
-  renderHeader(); renderChallenges(); renderMyTasks(); renderPhases(); renderTrophies(); renderAch();
+  renderHeader(); renderBeginnerHome(); renderChallenges(); renderMyTasks(); renderPhases(); renderTrophies(); renderAch();
 }
 
 // ================= boot =================
+function initMode(){
+  document.body.classList.toggle("beginner", UIMODE==="beginner");
+  const b=document.getElementById("modeToggle");
+  if(b) b.onclick=()=>setMode(UIMODE==="beginner"?"pro":"beginner");
+  syncModeBtn();
+}
 function startApp(){
-  rebuildTasks(); primeAll(); initTopbar(); initToolbar(); applyModeUI(); renderAll(); checkChallenges();
+  rebuildTasks(); primeAll(); initTopbar(); initToolbar(); applyModeUI(); initMode(); renderAll(); checkChallenges();
 }
 function applyModeUI(){
   if(SERVER){
@@ -1415,6 +1578,7 @@ boot();
 html = (TEMPLATE
         .replace("__TASKS_JSON__", tasks_json)
         .replace("__RANKS_JSON__", ranks_json)
+        .replace("__GUIDES_JSON__", guides_json)
         .replace("__LEVEL_BASE__", str(LEVEL_BASE))
         .replace("__LEVEL_STEP__", str(LEVEL_STEP)))
 
