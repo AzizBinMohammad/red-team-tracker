@@ -6,6 +6,8 @@ an admin panel, and per-user profiles. **No backend, no internet, no build step 
 
 **86 roadmap tasks · 30,850 total XP · 30 levels · 7 operator ranks · 8 league tiers · 12 achievements · 11 built-in trophies.**
 
+**▶ Live app:** https://azizbinmohammad.github.io/red-team-tracker/ — the standalone tracker, hosted on GitHub Pages (progress saves to your browser's localStorage).
+
 ## Screenshots
 
 **Pro dashboard** — the full roadmap: XP pool, rank/level, completion, and every phase with per-task Guide panels.
