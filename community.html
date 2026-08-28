@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Community · Red Team Mastery Tracker</title>
+<style>
+:root{--bg:#0a0e14;--panel:#0f1621;--panel2:#0b121d;--line:#1d2735;--txt:#d7e0ea;--muted:#6f7d90;--accent:#4a9dff;--accent2:#6db3ff;--gold:#e5b567;--green:#3fb950;--amber:#e6c98a;--red:#f85149;}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#12203a 0%,var(--bg) 60%);color:var(--txt);font:15px/1.5 ui-sans-serif,system-ui,Segoe UI,Roboto,sans-serif}
+a{color:var(--accent2);text-decoration:none}a:hover{text-decoration:underline}
+header{max-width:1000px;margin:0 auto;padding:28px 24px 4px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header .back{font-size:13px;color:var(--muted)}
+header h1{margin:0;font-size:22px;letter-spacing:1px;flex:1}
+header h1 .g{color:var(--gold)}
+.who{display:flex;align-items:center;gap:8px;font-size:13px}
+.who img{width:26px;height:26px;border-radius:50%}
+.btn{display:inline-block;background:var(--panel);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer}
+.btn:hover{border-color:var(--accent);text-decoration:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+main{max-width:1000px;margin:0 auto;padding:10px 24px 60px}
+.notice{background:#141b0e;border:1px solid #2c3a1a;border-left:3px solid var(--gold);border-radius:10px;padding:14px 16px;font-size:13.5px;margin:12px 0}
+.notice code{background:#0c1830;border:1px solid #22406a;border-radius:5px;padding:1px 5px;color:var(--accent2)}
+.gate{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px;text-align:center;margin-top:14px}
+.tabs{display:flex;gap:8px;margin:14px 0 10px}
+.tab{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:7px 14px;cursor:pointer;font-weight:600;font-size:13px}
+.tab.active{background:#12203a;border-color:#22406a;color:#fff}
+.pane{display:none}.pane.active{display:block}
+.chatbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;height:64vh;min-height:380px}
+.msgs{flex:1;overflow-y:auto;padding:14px 16px}
+.msg{margin:8px 0;display:flex;gap:9px;align-items:flex-start}
+.msg img{width:30px;height:30px;border-radius:50%;flex:0 0 auto}
+.msg .av{width:30px;height:30px;border-radius:50%;background:#22406a;display:flex;align-items:center;justify-content:center;font-size:14px;flex:0 0 auto}
+.msg .body{min-width:0}
+.msg .nm{font-size:12px;color:var(--accent2);font-weight:600}
+.msg .nm .t{color:var(--muted);font-weight:400;margin-left:6px;font-size:11px}
+.msg .tx{font-size:14px;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere}
+.msg.me .nm{color:var(--gold)}
+.composer{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);background:var(--panel2)}
+.composer input{flex:1;background:#0b121d;color:var(--txt);border:1px solid var(--line);border-radius:9px;padding:10px 12px;font:inherit}
+.composer input:focus{border-color:var(--accent);outline:none}
+.inboxWrap{display:grid;grid-template-columns:260px 1fr;gap:14px}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;max-height:64vh;overflow:auto}
+.side h4{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:10px 8px 6px}
+.urow{display:flex;align-items:center;gap:8px;padding:8px;border-radius:9px;cursor:pointer}
+.urow:hover,.urow.sel{background:#12203a}
+.urow img,.urow .av{width:28px;height:28px;border-radius:50%}
+.urow .av{background:#22406a;display:flex;align-items:center;justify-content:center;font-size:13px}
+.urow .un{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dmMain{background:var(--panel);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;height:64vh;min-height:380px;overflow:hidden}
+.dmHead{padding:12px 16px;border-bottom:1px solid var(--line);font-weight:600}
+.empty{color:var(--muted);font-size:13px;text-align:center;padding:40px 20px}
+footer{max-width:1000px;margin:0 auto;padding:0 24px 50px;color:#3a465c;font-size:12px;text-align:center}
+@media(max-width:720px){.inboxWrap{grid-template-columns:1fr}.side{max-height:200px}}
+</style></head>
+<body>
+<header>
+  <div style="flex-basis:100%"><span class="back"><a href="index.html">← Back to the Tracker</a> &nbsp;·&nbsp; <a href="resources.html">📚 Resources</a> &nbsp;·&nbsp; <a href="questions.html">💬 Q&amp;A</a></span></div>
+  <h1>👥 <span class="g">Community</span> — Chat &amp; Inbox</h1>
+  <div class="who" id="who"></div>
+</header>
+<main>
+  <div id="setup" class="notice" hidden>
+    <b>⚙ Community chat isn't connected yet.</b> It runs on a free Firebase project. The owner needs to paste a
+    Firebase web config into this page (<code>firebaseConfig</code>) and add the Firestore security rules.
+    See <code>COMMUNITY_SETUP.md</code> in the repo. Until then, chat and inbox are disabled.
+  </div>
+
+  <div id="gate" class="gate" hidden>
+    <p style="color:var(--muted)">Sign in to join the public chat and message other operators privately.</p>
+    <button class="btn primary" id="signIn">Sign in with Google</button>
+    <p style="color:var(--muted);font-size:12px;margin-top:14px">Be kind. Stay on-topic (infosec / tech). Messages are public in the chat room; inbox messages are private to you and the recipient.</p>
+  </div>
+
+  <div id="app" hidden>
+    <div class="tabs">
+      <div class="tab active" data-tab="chat">💬 Public Chat</div>
+      <div class="tab" data-tab="inbox">📥 Inbox</div>
+    </div>
+
+    <section class="pane active" id="paneChat">
+      <div class="chatbox">
+        <div class="msgs" id="chatMsgs"></div>
+        <form class="composer" id="chatForm">
+          <input id="chatInput" maxlength="1000" placeholder="Message the community…" autocomplete="off">
+          <button class="btn primary" type="submit">Send</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="pane" id="paneInbox">
+      <div class="inboxWrap">
+        <div class="side">
+          <h4>Conversations</h4>
+          <div id="threadList"><div class="empty" style="padding:14px">No messages yet.</div></div>
+          <h4>Operators</h4>
+          <div id="userList"><div class="empty" style="padding:14px">Loading…</div></div>
+        </div>
+        <div class="dmMain">
+          <div class="dmHead" id="dmHead">Select someone to start a private conversation</div>
+          <div class="msgs" id="dmMsgs"><div class="empty">Your private messages appear here.</div></div>
+          <form class="composer" id="dmForm" style="display:none">
+            <input id="dmInput" maxlength="2000" placeholder="Write a private message…" autocomplete="off">
+            <button class="btn primary" type="submit">Send</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+<footer>Community chat &amp; inbox · powered by Firebase · <em>be respectful — public messages are visible to everyone</em></footer>
+
+<script type="module">
+// ============================ CONFIG ============================
+// Paste your Firebase web app config here (Project settings → General → Your apps → Web).
+// This config is NOT secret — access is controlled by Firestore security rules (see COMMUNITY_SETUP.md).
+const firebaseConfig = {
+  apiKey: "PASTE_API_KEY",
+  authDomain: "PASTE_PROJECT.firebaseapp.com",
+  projectId: "PASTE_PROJECT",
+  appId: "PASTE_APP_ID"
+};
+// ===============================================================
+
+const $ = function(id){ return document.getElementById(id); };
+const configured = firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf("PASTE_") === -1;
+
+if(!configured){
+  $("setup").hidden = false;
+} else {
+  bootFirebase().catch(function(e){ $("setup").hidden=false; $("setup").innerHTML="<b>⚠ Community failed to load.</b> Check the Firebase config and security rules. ("+String(e&&e.message||e)+")"; });
+}
+
+async function bootFirebase(){
+  const V="https://www.gstatic.com/firebasejs/10.12.2/";
+  const { initializeApp } = await import(V+"firebase-app.js");
+  const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } = await import(V+"firebase-auth.js");
+  const { getFirestore, collection, doc, setDoc, addDoc, query, where, orderBy, limit, onSnapshot, serverTimestamp } = await import(V+"firebase-firestore.js");
+
+  const appFb = initializeApp(firebaseConfig);
+  const auth = getAuth(appFb);
+  const db = getFirestore(appFb);
+  let me = null, unsubChat=null, unsubUsers=null, unsubThreads=null, unsubDm=null, curCid=null;
+
+  $("signIn").onclick = function(){ signInWithPopup(auth, new GoogleAuthProvider()).catch(function(e){ alert("Sign-in failed: "+(e.message||e)); }); };
+
+  onAuthStateChanged(auth, function(user){
+    me = user;
+    if(user){
+      $("gate").hidden = true; $("app").hidden = false;
+      $("who").innerHTML = "";
+      const img = user.photoURL ? el("img",{src:user.photoURL,alt:""}) : null;
+      const nm = el("span",{},[document.createTextNode(user.displayName||"Operator")]);
+      const out = el("button",{class:"btn"},[document.createTextNode("Sign out")]);
+      out.onclick = function(){ signOut(auth); };
+      if(img) $("who").appendChild(img); $("who").appendChild(nm); $("who").appendChild(out);
+      // upsert profile
+      setDoc(doc(db,"users",user.uid), { name:user.displayName||"Operator", photo:user.photoURL||"", ts:serverTimestamp() }, {merge:true});
+      startChat(); startDirectory(); startThreads();
+    } else {
+      $("gate").hidden = false; $("app").hidden = true; $("who").innerHTML="";
+      [unsubChat,unsubUsers,unsubThreads,unsubDm].forEach(function(u){ if(u) u(); });
+    }
+  });
+
+  // ---------- helpers ----------
+  function el(tag,attrs,kids){ var e=document.createElement(tag); attrs=attrs||{};
+    for(var k in attrs){ e.setAttribute(k,attrs[k]); }
+    (kids||[]).forEach(function(c){ e.appendChild(c); }); return e; }
+  function avatar(photo,name,cls){
+    if(photo && /^https:\/\//i.test(photo)) return el("img",{src:photo,alt:"",class:cls||""});
+    var a=el("div",{class:(cls||"")+" av"}); a.textContent=(name||"?").slice(0,1).toUpperCase(); return a;
+  }
+  function timeStr(ts){ try{ var d=ts&&ts.toDate?ts.toDate():null; if(!d) return ""; return d.toLocaleString([], {hour:"2-digit",minute:"2-digit",month:"short",day:"numeric"}); }catch(e){ return ""; } }
+  function msgEl(m,mine){
+    var row=el("div",{class:"msg"+(mine?" me":"")});
+    row.appendChild(avatar(m.photo,m.name));
+    var body=el("div",{class:"body"});
+    var head=el("div",{class:"nm"}); head.textContent=(m.name||"Operator");
+    var t=el("span",{class:"t"}); t.textContent=timeStr(m.ts); head.appendChild(t);
+    var tx=el("div",{class:"tx"}); tx.textContent=m.text||"";  // textContent = XSS-safe
+    body.appendChild(head); body.appendChild(tx); row.appendChild(body); return row;
+  }
+  function scrollBottom(box){ box.scrollTop = box.scrollHeight; }
+
+  // ---------- public chat ----------
+  function startChat(){
+    if(unsubChat) unsubChat();
+    var qy = query(collection(db,"chat"), orderBy("ts","desc"), limit(100));
+    unsubChat = onSnapshot(qy, function(snap){
+      var box=$("chatMsgs"); box.innerHTML="";
+      var arr=[]; snap.forEach(function(d){ arr.push(d.data()); }); arr.reverse();
+      arr.forEach(function(m){ box.appendChild(msgEl(m, me && m.uid===me.uid)); });
+      scrollBottom(box);
+    }, function(){ });
+    $("chatForm").onsubmit = function(e){ e.preventDefault();
+      var v=$("chatInput").value.trim(); if(!v||!me) return; $("chatInput").value="";
+      addDoc(collection(db,"chat"), { uid:me.uid, name:me.displayName||"Operator", photo:me.photoURL||"", text:v.slice(0,1000), ts:serverTimestamp() });
+    };
+  }
+
+  // ---------- inbox ----------
+  function cidFor(a,b){ return [a,b].sort().join("__"); }
+  function startDirectory(){
+    if(unsubUsers) unsubUsers();
+    unsubUsers = onSnapshot(collection(db,"users"), function(snap){
+      var list=$("userList"); list.innerHTML="";
+      var any=false;
+      snap.forEach(function(d){ var u=d.data(); if(d.id===me.uid) return; any=true;
+        var row=el("div",{class:"urow"});
+        row.appendChild(avatar(u.photo,u.name));
+        var nm=el("div",{class:"un"}); nm.textContent=u.name||"Operator"; row.appendChild(nm);
+        row.onclick=function(){ openThread(d.id, u.name||"Operator"); };
+        list.appendChild(row);
+      });
+      if(!any) list.innerHTML='<div class="empty" style="padding:14px">No other operators yet.</div>';
+    }, function(){ });
+  }
+  function startThreads(){
+    if(unsubThreads) unsubThreads();
+    var qy = query(collection(db,"threads"), where("participants","array-contains",me.uid), orderBy("lastTs","desc"));
+    unsubThreads = onSnapshot(qy, function(snap){
+      var list=$("threadList"); list.innerHTML="";
+      if(snap.empty){ list.innerHTML='<div class="empty" style="padding:14px">No conversations yet.</div>'; return; }
+      snap.forEach(function(d){ var t=d.data();
+        var otherId=(t.participants||[]).filter(function(p){return p!==me.uid;})[0];
+        var otherName=(t.names&&otherId&&t.names[otherId])||"Operator";
+        var row=el("div",{class:"urow"});
+        row.appendChild(avatar("",otherName));
+        var nm=el("div",{class:"un"}); nm.textContent=otherName; row.appendChild(nm);
+        row.onclick=function(){ openThread(otherId, otherName); };
+        list.appendChild(row);
+      });
+    }, function(){ });
+  }
+  async function openThread(otherId, otherName){
+    curCid = cidFor(me.uid, otherId);
+    $("dmHead").textContent = otherName;
+    $("dmForm").style.display="flex";
+    // ensure thread doc exists with both participants + names (needed for security rules)
+    var names={}; names[me.uid]=me.displayName||"Operator"; names[otherId]=otherName;
+    await setDoc(doc(db,"threads",curCid), { participants:[me.uid,otherId], names:names, lastTs:serverTimestamp() }, {merge:true});
+    if(unsubDm) unsubDm();
+    var qy=query(collection(db,"threads",curCid,"messages"), orderBy("ts","asc"), limit(200));
+    unsubDm = onSnapshot(qy, function(snap){
+      var box=$("dmMsgs"); box.innerHTML="";
+      if(snap.empty){ box.innerHTML='<div class="empty">Say hello 👋</div>'; return; }
+      snap.forEach(function(d){ var m=d.data(); box.appendChild(msgEl({name:(m.from===me.uid?(me.displayName||"You"):otherName), photo:"", text:m.text, ts:m.ts}, m.from===me.uid)); });
+      scrollBottom(box);
+    }, function(){ });
+    $("dmForm").onsubmit=function(e){ e.preventDefault();
+      var v=$("dmInput").value.trim(); if(!v||!curCid) return; $("dmInput").value="";
+      addDoc(collection(db,"threads",curCid,"messages"), { from:me.uid, text:v.slice(0,2000), ts:serverTimestamp() });
+      setDoc(doc(db,"threads",curCid), { participants:[me.uid,otherId], names:names, lastText:v.slice(0,120), lastTs:serverTimestamp() }, {merge:true});
+    };
+  }
+
+  // ---------- tabs ----------
+  Array.prototype.forEach.call(document.querySelectorAll(".tab"), function(tab){
+    tab.onclick=function(){
+      document.querySelectorAll(".tab").forEach(function(t){ t.classList.remove("active"); });
+      document.querySelectorAll(".pane").forEach(function(p){ p.classList.remove("active"); });
+      tab.classList.add("active");
+      $(tab.getAttribute("data-tab")==="chat"?"paneChat":"paneInbox").classList.add("active");
+    };
+  });
+}
+</script>
+</body></html>
