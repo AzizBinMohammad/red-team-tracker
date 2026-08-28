@@ -11,6 +11,10 @@ color:var(--txt);font:15px/1.6 ui-sans-serif,system-ui,Segoe UI,Roboto,sans-seri
 a{color:var(--accent2);text-decoration:none}a:hover{text-decoration:underline}
 header{max-width:1080px;margin:0 auto;padding:40px 24px 8px}
 header .back{font-size:13px;color:var(--muted)}
+.topnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.topnav a{font-size:13px;font-weight:600;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:6px 12px}
+.topnav a:hover{border-color:var(--accent);color:var(--txt);text-decoration:none}
+.topnav a.active{background:#12203a;border-color:#22406a;color:#fff}
 header h1{margin:.2em 0;font-size:28px;letter-spacing:1px}
 header h1 .g{color:var(--gold)}
 header p{color:var(--muted);max-width:720px}
@@ -38,7 +42,12 @@ footer{max-width:1080px;margin:0 auto;padding:0 24px 60px;color:#3a465c;font-siz
 </style></head>
 <body>
 <header>
-  <div class="back"><a href="index.html">← Back to the Tracker</a> &nbsp;·&nbsp; <a href="questions.html">💬 Community Q&amp;A</a></div>
+  <nav class="topnav">
+    <a href="index.html">🎯 Tracker</a>
+    <a href="resources.html" class="active">📚 Resources</a>
+    <a href="questions.html">💬 Q&amp;A</a>
+    <a href="community.html">👥 Community</a>
+  </nav>
   <h1>Learning <span class="g">Resources</span></h1>
   <p>A curated shelf for the intermediate&nbsp;→ elite red-teamer journey: the books, channels, feeds, references, blogs, and hands-on labs worth your time. Practice only on systems you are authorized to test.</p>
 </header>

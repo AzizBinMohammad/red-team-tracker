@@ -9,6 +9,10 @@ body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#12203a 0%,var
 a{color:var(--accent2);text-decoration:none}a:hover{text-decoration:underline}
 header{max-width:820px;margin:0 auto;padding:40px 24px 8px}
 header .back{font-size:13px;color:var(--muted)}
+.topnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.topnav a{font-size:13px;font-weight:600;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:6px 12px}
+.topnav a:hover{border-color:var(--accent);color:var(--txt);text-decoration:none}
+.topnav a.active{background:#12203a;border-color:#22406a;color:#fff}
 header h1{margin:.2em 0;font-size:28px;letter-spacing:1px}
 header h1 .g{color:var(--gold)}
 header p{color:var(--muted);max-width:680px}
@@ -32,7 +36,12 @@ footer{max-width:820px;margin:0 auto;padding:0 24px 60px;color:#3a465c;font-size
 </style></head>
 <body>
 <header>
-  <div class="back"><a href="index.html">← Back to the Tracker</a> &nbsp;·&nbsp; <a href="resources.html">📚 Resources</a></div>
+  <nav class="topnav">
+    <a href="index.html">🎯 Tracker</a>
+    <a href="resources.html">📚 Resources</a>
+    <a href="questions.html" class="active">💬 Q&amp;A</a>
+    <a href="community.html">👥 Community</a>
+  </nav>
   <h1>Community <span class="g">Q&amp;A</span></h1>
   <p>Ask and answer questions with other operators. Powered by GitHub Discussions — you sign in with a free GitHub account to post.</p>
 </header>

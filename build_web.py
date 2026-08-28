@@ -395,8 +395,9 @@ h2.sec{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--mu
     </select>
     <span class="spacer"></span>
     <button class="btn" id="expandAll">Expand all</button>
-    <button class="btn" id="export">Export backup</button>
     <button class="btn" id="btnShare">📤 Share progress</button>
+    <span class="spacer"></span>
+    <button class="btn" id="export">Export backup</button>
     <button class="btn" id="importBtn">Import</button>
     <input type="file" id="importFile" accept="application/json" style="display:none">
     <button class="btn danger" id="reset">Reset</button>

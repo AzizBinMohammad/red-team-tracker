@@ -9,6 +9,10 @@ body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#12203a 0%,var
 a{color:var(--accent2);text-decoration:none}a:hover{text-decoration:underline}
 header{max-width:1000px;margin:0 auto;padding:28px 24px 4px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 header .back{font-size:13px;color:var(--muted)}
+.topnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.topnav a{font-size:13px;font-weight:600;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:6px 12px}
+.topnav a:hover{border-color:var(--accent);color:var(--txt);text-decoration:none}
+.topnav a.active{background:#12203a;border-color:#22406a;color:#fff}
 header h1{margin:0;font-size:22px;letter-spacing:1px;flex:1}
 header h1 .g{color:var(--gold)}
 .who{display:flex;align-items:center;gap:8px;font-size:13px}
@@ -53,7 +57,12 @@ footer{max-width:1000px;margin:0 auto;padding:0 24px 50px;color:#3a465c;font-siz
 </style></head>
 <body>
 <header>
-  <div style="flex-basis:100%"><span class="back"><a href="index.html">← Back to the Tracker</a> &nbsp;·&nbsp; <a href="resources.html">📚 Resources</a> &nbsp;·&nbsp; <a href="questions.html">💬 Q&amp;A</a></span></div>
+  <nav class="topnav" style="flex-basis:100%">
+    <a href="index.html">🎯 Tracker</a>
+    <a href="resources.html">📚 Resources</a>
+    <a href="questions.html">💬 Q&amp;A</a>
+    <a href="community.html" class="active">👥 Community</a>
+  </nav>
   <h1>👥 <span class="g">Community</span> — Chat &amp; Inbox</h1>
   <div class="who" id="who"></div>
 </header>
