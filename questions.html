@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Community Q&amp;A · Red Team Mastery Tracker</title>
+<style>
+:root{--bg:#0a0e14;--panel:#0f1621;--line:#1d2735;--txt:#d7e0ea;--muted:#6f7d90;--accent:#4a9dff;--accent2:#6db3ff;--gold:#e5b567;--amber:#e6c98a;}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#12203a 0%,var(--bg) 60%);color:var(--txt);font:15px/1.6 ui-sans-serif,system-ui,Segoe UI,Roboto,sans-serif}
+a{color:var(--accent2);text-decoration:none}a:hover{text-decoration:underline}
+header{max-width:820px;margin:0 auto;padding:40px 24px 8px}
+header .back{font-size:13px;color:var(--muted)}
+header h1{margin:.2em 0;font-size:28px;letter-spacing:1px}
+header h1 .g{color:var(--gold)}
+header p{color:var(--muted);max-width:680px}
+main{max-width:820px;margin:0 auto;padding:16px 24px 80px}
+.rule{background:#141b0e;border:1px solid #2c3a1a;border-left:3px solid var(--gold);border-radius:10px;padding:12px 15px;font-size:13.5px;margin-bottom:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:16px}
+.card.alt{border-left:3px solid var(--accent)}
+.card h2{font-size:17px;margin:.1em 0 .6em}
+.card .cdesc{color:var(--muted);font-size:13px;margin:.1em 0 .8em}
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:10px 0 4px}
+input[type=text],textarea{width:100%;background:#0b121d;color:var(--txt);border:1px solid var(--line);border-radius:9px;padding:10px 12px;font:inherit}
+input[type=text]:focus,textarea:focus{border-color:var(--accent);outline:none}
+textarea{resize:vertical}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.btn{display:inline-block;background:var(--panel);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:9px 15px;font:inherit;font-weight:600;cursor:pointer}
+.btn:hover{border-color:var(--accent);text-decoration:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.hint{color:var(--muted);font-size:12px;margin:10px 0 0}
+.warn{background:#1e1408;border:1px solid #4a3413;border-radius:9px;padding:9px 12px;color:var(--amber);font-size:13px;margin-top:10px}
+footer{max-width:820px;margin:0 auto;padding:0 24px 60px;color:#3a465c;font-size:12px;text-align:center}
+</style></head>
+<body>
+<header>
+  <div class="back"><a href="index.html">← Back to the Tracker</a> &nbsp;·&nbsp; <a href="resources.html">📚 Resources</a></div>
+  <h1>Community <span class="g">Q&amp;A</span></h1>
+  <p>Ask and answer questions with other operators. Powered by GitHub Discussions — you sign in with a free GitHub account to post.</p>
+</header>
+<main>
+  <div class="rule">
+    <b>📏 One rule:</b> questions must be about <b>information security or technology in general</b>
+    — pentesting, exploitation, defense, networking, programming, cloud, systems, tooling, and the like.
+    Off-topic questions will be closed.
+  </div>
+
+  <section class="card">
+    <h2>Ask a question</h2>
+    <label for="qTitle">Title</label>
+    <input id="qTitle" type="text" placeholder="e.g. How does Kerberoasting actually work?">
+    <label for="qBody">Details (optional)</label>
+    <textarea id="qBody" rows="5" placeholder="Add context: what you've tried, error messages, your setup…"></textarea>
+    <div id="qWarn" class="warn" hidden></div>
+    <div class="row">
+      <button class="btn primary" id="askBtn" type="button">Post on GitHub Discussions →</button>
+      <a class="btn" href="https://github.com/AzizBinMohammad/red-team-tracker/discussions/categories/q-a" target="_blank" rel="noopener noreferrer">Browse all questions</a>
+    </div>
+    <p class="hint">This opens a pre-filled discussion in the repo's <b>Q&amp;A</b> category. Requires a free GitHub account.</p>
+  </section>
+
+  <section class="card alt">
+    <h2>📤 Show your progress</h2>
+    <p class="cdesc">Finished a phase, hit a new rank, or cleared a hard task? Share it and cheer others on.</p>
+    <div class="row">
+      <a class="btn" href="https://github.com/AzizBinMohammad/red-team-tracker/discussions/new?category=show-and-tell&amp;title=My%20Red%20Team%20Tracker%20progress" target="_blank" rel="noopener noreferrer">Post your progress →</a>
+      <a class="btn" href="https://github.com/AzizBinMohammad/red-team-tracker/discussions/categories/show-and-tell" target="_blank" rel="noopener noreferrer">See everyone's progress</a>
+    </div>
+    <p class="hint">Tip: use the <b>📤 Share progress</b> button in the tracker to generate a card first, then paste it here.</p>
+  </section>
+</main>
+<footer>Community Q&amp;A for the Red Team Mastery Tracker · discussions live on GitHub · <em>be kind, stay on-topic</em></footer>
+<script>
+(function(){
+  var REPO="https://github.com/AzizBinMohammad/red-team-tracker";
+  var KW=["security","infosec","cyber","exploit","vulnerab","malware","ransomware","phish","network","packet","firewall","linux","windows","macos","kernel","python","javascript","typescript","golang"," rust","c++","code","program","script","compil","api","http","dns","tcp","udp","tls","ssl","encrypt","crypto","hash","password","auth","token","jwt","oauth","sql","nosql","xss","csrf","ssrf","rce","lfi","injection","overflow","reverse","binary","assembly","debug","fuzz","forensic","dfir","incident","soc","siem","detection","blue team","red team","purple","pentest","bug bounty","ctf","recon","osint","active directory","kerberos","ldap","ntlm","privilege","escalat","lateral","c2","payload","shell","docker","kubernetes","container","cloud","aws","azure","gcp","server","database","web","webapp","frontend","backend","mobile","android","ios","hardware","firmware","iot","protocol","wifi","bluetooth","vpn","proxy","burp","nmap","metasploit","wireshark","ghidra","bloodhound","cve","patch","threat","attack","defen","hack","exploitation","tooling","devops","sysadmin","operating system"];
+  function onTopic(s){ s=(" "+(s||"")+" ").toLowerCase(); for(var i=0;i<KW.length;i++){ if(s.indexOf(KW[i])>=0) return true; } return false; }
+  var title=document.getElementById("qTitle"), body=document.getElementById("qBody"),
+      warn=document.getElementById("qWarn"), btn=document.getElementById("askBtn");
+  var overridden=false;
+  function reset(){ overridden=false; warn.hidden=true; warn.textContent=""; btn.textContent="Post on GitHub Discussions →"; }
+  title.addEventListener("input",reset); body.addEventListener("input",reset);
+  btn.addEventListener("click",function(){
+    var t=(title.value||"").trim(), b=(body.value||"").trim();
+    if(!t){ warn.hidden=false; warn.textContent="Please enter a question title."; return; }
+    if(!onTopic(t+" "+b) && !overridden){
+      overridden=true; warn.hidden=false;
+      warn.textContent="⚠ This doesn't look like an infosec / tech question. Rephrase it to stay on-topic, or click again to post anyway.";
+      btn.textContent="Post anyway →"; return;
+    }
+    var foot="\n\n---\n_Asked via the Red Team Mastery Tracker. House rule: questions must be about infosec or tech in general._";
+    var url=REPO+"/discussions/new?category=q-a&title="+encodeURIComponent(t)+"&body="+encodeURIComponent(b+foot);
+    window.open(url,"_blank","noopener");
+    reset();
+  });
+})();
+</script>
+</body></html>

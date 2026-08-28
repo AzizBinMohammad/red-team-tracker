@@ -346,6 +346,7 @@ h2.sec{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--mu
     <span class="spacer"></span>
     <button class="btn modeToggle" id="modeToggle" title="Toggle Beginner / Pro view">🎯 Pro</button>
     <a class="btn" href="resources.html" title="Curated learning resources">📚 Resources</a>
+    <a class="btn" href="questions.html" title="Community Q&amp;A (GitHub Discussions)">💬 Q&amp;A</a>
     <button class="btn" id="btnLeaders">🏆 Leaderboard</button>
     <button class="btn" id="btnAdmin">⚙ Admin</button>
   </div>
@@ -394,6 +395,7 @@ h2.sec{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--mu
     <span class="spacer"></span>
     <button class="btn" id="expandAll">Expand all</button>
     <button class="btn" id="export">Export backup</button>
+    <button class="btn" id="btnShare">📤 Share progress</button>
     <button class="btn" id="importBtn">Import</button>
     <input type="file" id="importFile" accept="application/json" style="display:none">
     <button class="btn danger" id="reset">Reset</button>
@@ -1022,6 +1024,72 @@ function openUserMenu(){
   });
 }
 
+// ================= share progress =================
+function shareData(){
+  const auth=(SERVER&&SRVSTATS)?SRVSTATS:null;
+  const xp=auth?auth.xp:earnedXp();
+  const pool=totalXp(), L=auth?auth.level:levelFromXp(xp);
+  const {rank}=rankFor(L); const lg=leagueFor(L);
+  const done=rmDone(state), total=TASKS.length;
+  const u=cur()||{};
+  return { name:(u.name||"Operator"), avatar:(u.avatar||"🎯"), level:L, xp:xp, pool:pool,
+    rank:rank, league:lg.name, leagueColor:lg.c||"#3fb950", done:done, total:total,
+    pct:(total?Math.round(done/total*100):0), trophies:trophyCount((u.progress)||{done:{}}) };
+}
+function shareSummary(d){
+  return "🎯 Red Team Mastery Tracker — "+d.name+"\n"+
+    "Rank: "+d.rank+" ("+d.league+" league) · Level "+d.level+"\n"+
+    "XP "+d.xp.toLocaleString()+" · Roadmap "+d.done+"/"+d.total+" ("+d.pct+"%) · 🏆 "+d.trophies+"\n"+
+    "Track yours → https://azizbinmohammad.github.io/red-team-tracker/";
+}
+function drawShareCard(cv,d){
+  const R=window.devicePixelRatio||1, W=680, H=360;
+  cv.width=W*R; cv.height=H*R; cv.style.width="100%"; cv.style.maxWidth=W+"px";
+  const x=cv.getContext("2d"); x.scale(R,R);
+  const g=x.createLinearGradient(0,0,W,H); g.addColorStop(0,"#0e1a2f"); g.addColorStop(1,"#0a0e14");
+  x.fillStyle=g; x.fillRect(0,0,W,H);
+  x.strokeStyle="#22406a"; x.lineWidth=2; x.strokeRect(8,8,W-16,H-16);
+  x.fillStyle="#6db3ff"; x.font="bold 14px ui-sans-serif,system-ui,sans-serif"; x.fillText("// RED TEAM MASTERY TRACKER",30,46);
+  x.fillStyle="#ffffff"; x.font="bold 30px ui-sans-serif,system-ui,sans-serif"; x.fillText(d.avatar+"  "+d.name,30,92);
+  x.fillStyle="#e5b567"; x.font="bold 22px ui-sans-serif,system-ui,sans-serif"; x.fillText(d.rank,30,130);
+  x.fillStyle=d.leagueColor; x.font="12px ui-sans-serif,system-ui,sans-serif"; x.fillText((d.league||"").toUpperCase()+" LEAGUE",30,152);
+  function stat(label,val,px){ x.fillStyle="#6f7d90"; x.font="11px ui-sans-serif,system-ui,sans-serif"; x.fillText(label,px,208);
+    x.fillStyle="#d7e0ea"; x.font="bold 25px ui-sans-serif,system-ui,sans-serif"; x.fillText(val,px,240); }
+  stat("LEVEL",String(d.level),30); stat("XP",d.xp.toLocaleString(),150);
+  stat("ROADMAP",d.done+"/"+d.total,320); stat("TROPHIES",String(d.trophies),500);
+  x.fillStyle="#6f7d90"; x.font="11px ui-sans-serif,system-ui,sans-serif"; x.fillText("COMPLETION  "+d.pct+"%",30,284);
+  x.fillStyle="#0a121d"; x.fillRect(30,294,W-60,16);
+  x.fillStyle="#2f81f7"; x.fillRect(30,294,(W-60)*d.pct/100,16);
+  x.strokeStyle="#1d2735"; x.lineWidth=1; x.strokeRect(30,294,W-60,16);
+  x.fillStyle="#6f7d90"; x.font="11px ui-sans-serif,system-ui,sans-serif"; x.fillText("azizbinmohammad.github.io/red-team-tracker",30,338);
+}
+function openShare(){
+  const d=shareData();
+  const inner=`<div class="mhead"><h3>📤 Share progress</h3><span class="x" data-act="close">✕</span></div>
+    <div style="text-align:center;margin:6px 0"><canvas id="shareCv"></canvas></div>
+    <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px">
+      <a class="btn" id="dlCard" download="red-team-progress.png">⬇ Download card</a>
+      <button class="btn" data-act="copy">📋 Copy summary</button>
+      <button class="btn" data-act="post">💬 Post to Discussions</button>
+    </div>
+    <div class="note" id="shareNote" style="margin-top:10px">Download the image or copy your summary, then share it anywhere. "Post to Discussions" opens a pre-filled GitHub post (needs a free GitHub account).</div>`;
+  const ov=modal(inner);
+  const cv=ov.querySelector("#shareCv"); try{ drawShareCard(cv,d); }catch(e){}
+  try{ ov.querySelector("#dlCard").href=cv.toDataURL("image/png"); }catch(e){ const b=ov.querySelector("#dlCard"); if(b) b.style.display="none"; }
+  ov.addEventListener("click",function(e){
+    const t=e.target; const act=t&&t.getAttribute&&t.getAttribute("data-act"); if(!act) return;
+    if(act==="close"){ closeModal(); return; }
+    const note=ov.querySelector("#shareNote");
+    if(act==="copy"){ const txt=shareSummary(d);
+      if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(()=>{ if(note) note.textContent="✓ Summary copied to your clipboard."; },()=>{ if(note) note.textContent=txt; }); }
+      else if(note){ note.textContent=txt; } return; }
+    if(act==="post"){
+      const title="My Red Team Tracker progress — Level "+d.level+" ("+d.rank+")";
+      const body=shareSummary(d)+"\n\n_Shared via the Red Team Mastery Tracker._";
+      window.open("https://github.com/AzizBinMohammad/red-team-tracker/discussions/new?category=show-and-tell&title="+encodeURIComponent(title)+"&body="+encodeURIComponent(body),"_blank","noopener"); return; }
+  });
+}
+
 function openLeaderboard(){
   const arr=Object.values(DB.users).map(u=>({u,c:userStats(u),tr:trophyCount(u.progress)}))
     .sort((a,b)=>b.c.xp-a.c.xp);
@@ -1462,6 +1530,7 @@ function initTopbar(){
   $("#profileChip").onclick=openUserMenu;
   $("#btnLeaders").onclick=openLeaderboard;
   $("#btnAdmin").onclick=openAdmin;
+  { const bs=$("#btnShare"); if(bs) bs.onclick=openShare; }
 }
 function initToolbar(){
   ["#q","#fPhase","#fTrack","#fCat","#fStatus"].forEach(s=>$(s).addEventListener("input",renderPhases));

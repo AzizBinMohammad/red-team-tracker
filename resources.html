@@ -24,13 +24,32 @@ ul.reslist li:first-child{border-top:0}
 ul.reslist a{font-weight:600;font-size:14px}
 ul.reslist .why{display:block;color:var(--muted);font-size:12px;margin-top:2px}
 footer{max-width:1080px;margin:0 auto;padding:0 24px 60px;color:#3a465c;font-size:12px;text-align:center}
+.reads{max-width:1080px;margin:18px auto 0;padding:0 24px}
+.reads .rbox{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:14px;padding:16px 18px}
+.reads h2{font-size:16px;margin:.1em 0;letter-spacing:.5px}
+.reads .credit{color:var(--muted);font-size:11px;font-weight:400}
+.reads .cdesc{color:var(--muted);font-size:12.5px;margin:.2em 0 .8em}
+.readgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:10px}
+.readcard{display:block;background:#0b121d;border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+.readcard:hover{border-color:var(--accent);text-decoration:none}
+.readcard .rt{font-weight:600;font-size:13.5px;color:var(--txt);display:block;line-height:1.35}
+.readcard .rm{color:var(--muted);font-size:11px;margin-top:5px;display:block}
+.reads .rstate{color:var(--muted);font-size:12.5px;padding:6px 0}
 </style></head>
 <body>
 <header>
-  <div class="back"><a href="index.html">← Back to the Tracker</a></div>
+  <div class="back"><a href="index.html">← Back to the Tracker</a> &nbsp;·&nbsp; <a href="questions.html">💬 Community Q&amp;A</a></div>
   <h1>Learning <span class="g">Resources</span></h1>
   <p>A curated shelf for the intermediate&nbsp;→ elite red-teamer journey: the books, channels, feeds, references, blogs, and hands-on labs worth your time. Practice only on systems you are authorized to test.</p>
 </header>
+<section class="reads" id="reads">
+  <div class="rbox">
+    <h2>📰 Latest from Infosec Write-ups <span class="credit">· via infosecwriteups.com</span></h2>
+    <p class="cdesc">Fresh community write-ups — bug bounty, CTF, malware analysis, red &amp; blue team. Each card opens the original article. <a href="https://infosecwriteups.com/" target="_blank" rel="noopener noreferrer">Browse all →</a></p>
+    <div id="readState" class="rstate">Loading latest articles…</div>
+    <div class="readgrid" id="readGrid"></div>
+  </div>
+</section>
 <div class="grid">
 <section class="cat"><h2>📚 Books</h2><p class="cdesc">Field-defining reads. Work through them, don&#x27;t just shelve them.</p><ul class="reslist"><li><a href="https://portswigger.net/web-security/web-application-hackers-handbook" target="_blank" rel="noopener noreferrer">The Web Application Hacker&#x27;s Handbook</a><span class="why">The web-app bible (pairs with the free PortSwigger Academy).</span></li>
 <li><a href="https://securepla.net/" target="_blank" rel="noopener noreferrer">The Hacker Playbook 3 — Peter Kim</a><span class="why">Practical red-team playbook, engagement-flavoured.</span></li>
@@ -77,4 +96,69 @@ footer{max-width:1080px;margin:0 auto;padding:0 24px 60px;color:#3a465c;font-siz
 <li><a href="https://www.offsec.com/labs/" target="_blank" rel="noopener noreferrer">OffSec Proving Grounds</a><span class="why">OSCP-style practice targets.</span></li></ul></section>
 </div>
 <footer>Curated for the Red Team Mastery Tracker · links open in a new tab · <em>authorized labs and environments only</em></footer>
+<script>
+(function(){
+  var FEED="https://infosecwriteups.com/feed";
+  var PROXY="https://api.allorigins.win/raw?url=";
+  var FALLBACK=[
+    {t:"Assembly for Malware Analysis",a:"Andrey Pautov",u:"https://infosecwriteups.com/assembly-for-malware-analysis-be0679241940"},
+    {t:"From SQL Injection to Remote Code Execution",a:"Adwaith S",u:"https://infosecwriteups.com/from-sql-injection-to-remote-code-execution-4cf6eb22dbb5"},
+    {t:"scriptCTF Writeups 2026",a:"truffles",u:"https://infosecwriteups.com/scriptctf-writeups-2026-cybersecurity-7916c6097e3c"},
+    {t:"Got My First $$ Bug Bounty",a:"Prajwal",u:"https://infosecwriteups.com/got-my-first-bug-bounty-9d3d017b4342"}
+  ];
+  var grid=document.getElementById("readGrid"), state=document.getElementById("readState");
+  if(!grid||!state) return;
+  function safeUrl(u){ return (typeof u==="string" && /^https:\/\//i.test(u)) ? u : ""; }
+  function fmtDate(d){ try{ var dt=new Date(d); if(isNaN(dt.getTime())) return ""; var days=Math.round((Date.now()-dt.getTime())/86400000); if(days<=0) return "today"; if(days===1) return "1 day ago"; if(days<30) return days+" days ago"; return dt.toLocaleDateString(); }catch(e){ return ""; } }
+  function card(it){
+    var url=safeUrl(it.u); if(!url) return null;
+    var a=document.createElement("a");
+    a.className="readcard"; a.href=url; a.target="_blank"; a.rel="noopener noreferrer";
+    var t=document.createElement("span"); t.className="rt"; t.textContent=it.t||"(untitled)"; a.appendChild(t);
+    var m=document.createElement("span"); m.className="rm";
+    m.textContent=(it.a||"Infosec Write-ups")+(it.d?" · "+it.d:""); a.appendChild(m);
+    return a;
+  }
+  function render(items,note){
+    grid.textContent=""; var n=0;
+    items.slice(0,8).forEach(function(it){ var c=card(it); if(c){ grid.appendChild(c); n++; } });
+    if(!n){ renderFallback(); return; }
+    state.textContent=note||""; state.style.display=note?"":"none";
+  }
+  function renderFallback(){
+    grid.textContent=""; FALLBACK.forEach(function(f){ var c=card({t:f.t,a:f.a,u:f.u,d:""}); if(c) grid.appendChild(c); });
+    state.textContent="Showing a saved selection — the live feed is unavailable right now."; state.style.display="";
+  }
+  function parseXml(txt){
+    var doc=new DOMParser().parseFromString(txt,"application/xml");
+    if(doc.getElementsByTagName("parsererror").length) return [];
+    var nodes=doc.getElementsByTagName("item"), out=[];
+    for(var i=0;i<nodes.length;i++){ var n=nodes[i];
+      var g=function(tag){ var e=n.getElementsByTagName(tag); return (e&&e.length)?e[0].textContent.trim():""; };
+      out.push({ t:g("title"), u:g("link"), a:g("dc:creator"), d:fmtDate(g("pubDate")) });
+    }
+    return out;
+  }
+  function parseJson(txt){ var j=JSON.parse(txt); if(!j||!j.items) return [];
+    return j.items.map(function(it){ return { t:it.title, u:it.link, a:it.author, d:fmtDate(it.pubDate) }; }); }
+  var SOURCES=[
+    { url:"https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(FEED), parse:parseJson },
+    { url:"https://corsproxy.io/?url="+encodeURIComponent(FEED), parse:parseXml },
+    { url:"https://api.allorigins.win/raw?url="+encodeURIComponent(FEED), parse:parseXml }
+  ];
+  var done=false, to=setTimeout(function(){ if(!done){ done=true; renderFallback(); } },10000);
+  function tryNext(i){
+    if(done) return;
+    if(i>=SOURCES.length){ done=true; clearTimeout(to); renderFallback(); return; }
+    fetch(SOURCES[i].url).then(function(r){ if(!r.ok) throw 0; return r.text(); }).then(function(txt){
+      if(done) return;
+      var items=[]; try{ items=SOURCES[i].parse(txt); }catch(e){ items=[]; }
+      items=(items||[]).filter(function(x){ return x && x.t && safeUrl(x.u); });
+      if(items.length){ done=true; clearTimeout(to); render(items,""); }
+      else tryNext(i+1);
+    }).catch(function(){ tryNext(i+1); });
+  }
+  tryNext(0);
+})();
+</script>
 </body></html>
