@@ -32,10 +32,26 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function validThread(cid, data) {
+      return data.participants is list
+        && data.participants.size() == 2
+        && data.participants[0] != data.participants[1]
+        && request.auth.uid in data.participants
+        && (cid == data.participants[0] + '__' + data.participants[1]
+            || cid == data.participants[1] + '__' + data.participants[0]);
+    }
+
     // Public profiles: any signed-in user can read; you may only write your own.
     match /users/{uid} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'photo', 'ts'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.photo is string
+        && request.resource.data.photo.size() <= 2048;
     }
 
     // Public chat: signed-in users read all; create your own messages (1..1000 chars); no edits/deletes.
@@ -43,6 +59,11 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create: if request.auth != null
         && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'photo', 'text', 'ts'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.photo is string
+        && request.resource.data.photo.size() <= 2048
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 1000;
@@ -52,8 +73,15 @@ service cloud.firestore {
     // Private DM threads: only the two participants can read or write.
     match /threads/{cid} {
       allow read:   if request.auth != null && request.auth.uid in resource.data.participants;
-      allow create: if request.auth != null && request.auth.uid in request.resource.data.participants;
-      allow update: if request.auth != null && request.auth.uid in resource.data.participants;
+      allow create: if request.auth != null
+        && validThread(cid, request.resource.data)
+        && request.resource.data.keys().hasOnly(['participants', 'names', 'lastText', 'lastTs']);
+      allow update: if request.auth != null
+        && request.auth.uid in resource.data.participants
+        && validThread(cid, request.resource.data)
+        && request.resource.data.participants == resource.data.participants
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['names', 'lastText', 'lastTs']);
       allow delete: if false;
 
       match /messages/{m} {
@@ -62,6 +90,7 @@ service cloud.firestore {
         allow create: if request.auth != null
           && request.resource.data.from == request.auth.uid
           && request.auth.uid in get(/databases/$(database)/documents/threads/$(cid)).data.participants
+          && request.resource.data.keys().hasOnly(['from', 'text', 'ts'])
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0
           && request.resource.data.text.size() <= 2000;
@@ -71,6 +100,8 @@ service cloud.firestore {
   }
 }
 ```
+
+The same deployable rules are stored in `firestore.rules`. Keep that file and this example in sync.
 
 ## 5. Create the one composite index the inbox needs
 The "your conversations" list queries `threads` by `participants` (array-contains) ordered by `lastTs`.

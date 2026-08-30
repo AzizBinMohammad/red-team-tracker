@@ -13,6 +13,8 @@ tracker.db-wal
 tracker.db-shm
 .secret_key
 .backups/
+dist/
+red-team-tracker.zip
 
 # --- hidden local-only Masters' Vault (never publish) ---
 .vault/

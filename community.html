@@ -133,14 +133,17 @@ const configured = firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf("PASTE
 if(!configured){
   $("setup").hidden = false;
 } else {
-  bootFirebase().catch(function(e){ $("setup").hidden=false; $("setup").innerHTML="<b>⚠ Community failed to load.</b> Check the Firebase config and security rules. ("+String(e&&e.message||e)+")"; });
+  bootFirebase().catch(function(e){
+    $("setup").hidden=false;
+    $("setup").textContent="⚠ Community failed to load. Check the Firebase config and security rules. ("+String(e&&e.message||e)+")";
+  });
 }
 
 async function bootFirebase(){
   const V="https://www.gstatic.com/firebasejs/10.12.2/";
   const { initializeApp } = await import(V+"firebase-app.js");
   const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } = await import(V+"firebase-auth.js");
-  const { getFirestore, collection, doc, setDoc, addDoc, query, where, orderBy, limit, onSnapshot, serverTimestamp } = await import(V+"firebase-firestore.js");
+  const { getFirestore, collection, doc, getDoc, setDoc, addDoc, query, where, orderBy, limit, onSnapshot, serverTimestamp } = await import(V+"firebase-firestore.js");
 
   const appFb = initializeApp(firebaseConfig);
   const auth = getAuth(appFb);
@@ -240,11 +243,20 @@ async function bootFirebase(){
   }
   async function openThread(otherId, otherName){
     curCid = cidFor(me.uid, otherId);
+    var participants=[me.uid,otherId].sort();
     $("dmHead").textContent = otherName;
     $("dmForm").style.display="flex";
     // ensure thread doc exists with both participants + names (needed for security rules)
     var names={}; names[me.uid]=me.displayName||"Operator"; names[otherId]=otherName;
-    await setDoc(doc(db,"threads",curCid), { participants:[me.uid,otherId], names:names, lastTs:serverTimestamp() }, {merge:true});
+    var threadRef=doc(db,"threads",curCid), existing=await getDoc(threadRef);
+    if(existing.exists()){
+      var current=existing.data().participants||[];
+      if(current.length!==2 || current.indexOf(me.uid)<0 || current.indexOf(otherId)<0) throw new Error("invalid thread membership");
+      participants=current; // preserve ordering in threads created under earlier rules
+      await setDoc(threadRef, { names:names, lastTs:serverTimestamp() }, {merge:true});
+    }else{
+      await setDoc(threadRef, { participants:participants, names:names, lastTs:serverTimestamp() });
+    }
     if(unsubDm) unsubDm();
     var qy=query(collection(db,"threads",curCid,"messages"), orderBy("ts","asc"), limit(200));
     unsubDm = onSnapshot(qy, function(snap){
@@ -256,7 +268,7 @@ async function bootFirebase(){
     $("dmForm").onsubmit=function(e){ e.preventDefault();
       var v=$("dmInput").value.trim(); if(!v||!curCid) return; $("dmInput").value="";
       addDoc(collection(db,"threads",curCid,"messages"), { from:me.uid, text:v.slice(0,2000), ts:serverTimestamp() });
-      setDoc(doc(db,"threads",curCid), { participants:[me.uid,otherId], names:names, lastText:v.slice(0,120), lastTs:serverTimestamp() }, {merge:true});
+      setDoc(threadRef, { names:names, lastText:v.slice(0,120), lastTs:serverTimestamp() }, {merge:true});
     };
   }
 

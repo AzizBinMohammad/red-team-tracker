@@ -614,6 +614,10 @@ function trophyEarnedP(p,tr){
 }
 function trophyEarned(tr){ return trophyEarnedP(state,tr); }
 function trophyCount(p){ return allTrophies().filter(t=>trophyEarnedP(p,t)).length; }
+function userTrophyCount(u){
+  if(SERVER && u && !u.hasPrivateProgress) return Number(u.trophyCount)||0;
+  return trophyCount((u&&u.progress)||{done:{}});
+}
 function primeAll(){
   rebuildTasks();
   for(const u of Object.values(DB.users)){
@@ -668,13 +672,13 @@ function renderChallenges(){
       : (w.expired ? '<span style="color:var(--red)">Expired</span>' : timeLeft(w.left)+" left");
     const cls="challenge"+(done?" done":(w.expired?" expired":""));
     return `<div class="${cls}">
-      <div class="chIco">${troph?troph.ico:"🎯"}</div>
+      <div class="chIco">${escapeHtml(troph?troph.ico:"🎯")}</div>
       <div class="chBody">
         <div class="chTop"><b>${escapeHtml(c.name)}</b><span class="chStatus">${status}</span></div>
         <div class="chDesc">${escapeHtml(c.desc||"")}</div>
         <div class="chBar"><i style="width:${pct}%"></i></div>
         <div class="chMeta">${pr.have}/${pr.need} ${c.goalType==="count"?"tasks this window":"objectives"} · reward <b>+${c.xp||0} XP</b>${troph?" · 🏆 "+escapeHtml(troph.name):""}</div>
-        ${c.goalType==="tasks"&&(c.taskIds||[]).length?`<div class="chTasks">${c.taskIds.map(id=>`<span class="chip id${state.done[id]?" met":""}">${id}</span>`).join("")}</div>`:""}
+        ${c.goalType==="tasks"&&(c.taskIds||[]).length?`<div class="chTasks">${c.taskIds.map(id=>`<span class="chip id${state.done[id]?" met":""}">${escapeHtml(id)}</span>`).join("")}</div>`:""}
       </div></div>`;
   }).join("");
 }
@@ -733,12 +737,12 @@ function renderMyTasks(){
   const host=$("#myTasksWrap"); const list=personalOf(state);
   const rows=list.map(t=>{ const d=!!state.done[t.id];
     return `<div class="task${d?" done":""}">
-      <div class="chk" data-id="${t.id}" role="checkbox" aria-checked="${d}" tabindex="0">${checkSvg()}</div>
+      <div class="chk" data-id="${escapeAttr(t.id)}" role="checkbox" aria-checked="${d}" tabindex="0">${checkSvg()}</div>
       <div class="tbody"><div class="ttitle">${escapeHtml(t.title)}</div>
         <div class="tmeta"><span class="chip cat">${escapeHtml(t.cat||"Personal")}</span>
           <span class="diff" title="difficulty ${t.diff}/5">${"★".repeat(t.diff)}${"☆".repeat(5-t.diff)}</span></div></div>
       <div class="xpTag">${t.xp} XP</div>
-      <button class="btn mini danger delMy" data-id="${t.id}" title="delete task">✕</button></div>`;
+      <button class="btn mini danger delMy" data-id="${escapeAttr(t.id)}" title="delete task">✕</button></div>`;
   }).join("");
   const doneN=list.filter(t=>state.done[t.id]).length;
   host.innerHTML=`<div class="phase"><div class="phaseHead" style="cursor:default">
@@ -811,19 +815,19 @@ function renderPhases(){
       row.className="task"+(d?" done":"");
       const hasGuide=!!guideFor(t.id);
       row.innerHTML=`
-        <div class="chk" data-id="${t.id}" role="checkbox" aria-checked="${d}" tabindex="0">${checkSvg()}</div>
+        <div class="chk" data-id="${escapeAttr(t.id)}" role="checkbox" aria-checked="${d}" tabindex="0">${checkSvg()}</div>
         <div class="tbody">
           <div class="ttitle">${escapeHtml(t.title)}</div>
           <div class="tmeta">
-            <span class="chip id">${t.id}</span>
+            <span class="chip id">${escapeHtml(t.id)}</span>
             <span class="chip cat">${escapeHtml(t.cat)}</span>
             <span class="chip track">${escapeHtml(t.track)}</span>
             <span class="diff" title="difficulty ${t.diff}/5">${"★".repeat(t.diff)}${"☆".repeat(5-t.diff)}</span>
-            ${hasGuide?`<button class="gBtn" data-guide="${t.id}" aria-expanded="false">📖 Guide</button>`:""}
+            ${hasGuide?`<button class="gBtn" data-guide="${escapeAttr(t.id)}" aria-expanded="false">📖 Guide</button>`:""}
           </div>
         </div>
         <div class="xpTag">${t.xp} XP</div>
-        <div class="taskGuide" data-gid="${t.id}" hidden></div>`;
+        <div class="taskGuide" data-gid="${escapeAttr(t.id)}" hidden></div>`;
       body.appendChild(row);
     }
     host.appendChild(sec);
@@ -896,7 +900,7 @@ function renderTrophies(){
     const won=trophyEarned(t); const tc=(TIERS[t.tier]||TIERS.bronze).c;
     const el=document.createElement("div");
     el.className="trophy"+(won?" won":""); el.style.setProperty("--tc",tc);
-    el.innerHTML=`<div class="ribbon">${won?"★":"🔒"}</div><div class="tico">${t.ico}</div>
+    el.innerHTML=`<div class="ribbon">${won?"★":"🔒"}</div><div class="tico">${escapeHtml(t.ico)}</div>
       <div class="tn">${escapeHtml(t.name)}</div><div class="td">${escapeHtml(t.desc||"")}</div>
       <div class="tier">${(TIERS[t.tier]||{}).n||t.tier||""}</div>`;
     g.appendChild(el);
@@ -913,7 +917,9 @@ function checkNewTrophies(){
 
 function toast(kind,tt,ts){
   const d=document.createElement("div"); d.className="toast "+kind;
-  d.innerHTML=`<div class="tt">${tt}</div><div class="ts">${ts}</div>`;
+  const title=document.createElement("div"); title.className="tt"; title.textContent=String(tt||"");
+  const sub=document.createElement("div"); sub.className="ts"; sub.textContent=String(ts||"");
+  d.appendChild(title); d.appendChild(sub);
   $("#toasts").appendChild(d); setTimeout(()=>d.remove(),4000);
 }
 
@@ -937,8 +943,8 @@ function addUser(name,avatar,isAdmin){
 
 function openUserMenu(){
   const rows=Object.values(DB.users).map(u=>{ const c=userStats(u);
-    return `<div class="lbRow ${u.id===DB.currentUser?"me":""}" data-act="switch" data-id="${u.id}" style="cursor:pointer">
-      <span class="lbAv">${u.avatar||"🎯"}</span>
+    return `<div class="lbRow ${u.id===DB.currentUser?"me":""}" data-act="switch" data-id="${escapeAttr(u.id)}" style="cursor:pointer">
+      <span class="lbAv">${escapeHtml(u.avatar||"🎯")}</span>
       <div class="lbName"><b>${escapeHtml(u.name)}</b><small>Lvl ${c.level} · ${leagueFor(c.level).name}${u.isAdmin?" · admin":""}</small></div>
       <div class="lbStat"><b>${c.xp.toLocaleString()}</b> XP</div></div>`;
   }).join("");
@@ -968,7 +974,7 @@ function shareData(){
   const u=cur()||{};
   return { name:(u.name||"Operator"), avatar:(u.avatar||"🎯"), level:L, xp:xp, pool:pool,
     rank:rank, league:lg.name, leagueColor:lg.c||"#3fb950", done:done, total:total,
-    pct:(total?Math.round(done/total*100):0), trophies:trophyCount((u.progress)||{done:{}}) };
+    pct:(total?Math.round(done/total*100):0), trophies:userTrophyCount(u) };
 }
 function shareSummary(d){
   return "🎯 Red Team Mastery Tracker — "+d.name+"\n"+
@@ -1025,11 +1031,11 @@ function openShare(){
 }
 
 function openLeaderboard(){
-  const arr=Object.values(DB.users).map(u=>({u,c:userStats(u),tr:trophyCount(u.progress)}))
+  const arr=Object.values(DB.users).map(u=>({u,c:userStats(u),tr:userTrophyCount(u)}))
     .sort((a,b)=>b.c.xp-a.c.xp);
   const medal=i=> i===0?"🥇":i===1?"🥈":i===2?"🥉":("#"+(i+1));
   const rows=arr.map((r,i)=>`<div class="lbRow ${r.u.id===DB.currentUser?"me":""}">
-    <span class="lbPos">${medal(i)}</span><span class="lbAv">${r.u.avatar||"🎯"}</span>
+    <span class="lbPos">${medal(i)}</span><span class="lbAv">${escapeHtml(r.u.avatar||"🎯")}</span>
     <div class="lbName"><b>${escapeHtml(r.u.name)}</b><small>Lvl ${r.c.level} · ${rankFor(r.c.level).rank} · ${leagueFor(r.c.level).name}</small></div>
     <div class="lbStat"><b>${r.c.xp.toLocaleString()}</b> XP<br>${r.c.rmDone}/${r.c.rmTotal} · 🏆${r.tr}</div></div>`).join("");
   const ov=modal(`<div class="mhead"><h3>🏆 Leaderboard</h3><span class="x" data-act="close">✕</span></div>
@@ -1084,21 +1090,21 @@ function adminUsers(){
   const rows=Object.values(DB.users).map(u=>{ const c=userStats(u);
     const isMe = u.id===DB.currentUser;
     const acts = SERVER
-      ? `<button class="btn mini" data-act="urename" data-id="${u.id}">Rename</button>
-         <button class="btn mini" data-act="upw" data-id="${u.id}">Set password</button>
-         <button class="btn mini" data-act="uadmin" data-id="${u.id}">${u.isAdmin?"Revoke admin":"Make admin"}</button>
-         <button class="btn mini" data-act="ureset" data-id="${u.id}">Reset</button>
-         <button class="btn mini danger" data-act="udel" data-id="${u.id}">Delete</button>`
-      : `<button class="btn mini" data-act="uswitch" data-id="${u.id}">Switch</button>
-         <button class="btn mini" data-act="urename" data-id="${u.id}">Rename</button>
-         <button class="btn mini" data-act="uadmin" data-id="${u.id}">${u.isAdmin?"Revoke admin":"Make admin"}</button>
-         <button class="btn mini" data-act="ureset" data-id="${u.id}">Reset</button>
-         <button class="btn mini danger" data-act="udel" data-id="${u.id}">Delete</button>`;
+      ? `<button class="btn mini" data-act="urename" data-id="${escapeAttr(u.id)}">Rename</button>
+         <button class="btn mini" data-act="upw" data-id="${escapeAttr(u.id)}">Set password</button>
+         <button class="btn mini" data-act="uadmin" data-id="${escapeAttr(u.id)}">${u.isAdmin?"Revoke admin":"Make admin"}</button>
+         <button class="btn mini" data-act="ureset" data-id="${escapeAttr(u.id)}">Reset</button>
+         <button class="btn mini danger" data-act="udel" data-id="${escapeAttr(u.id)}">Delete</button>`
+      : `<button class="btn mini" data-act="uswitch" data-id="${escapeAttr(u.id)}">Switch</button>
+         <button class="btn mini" data-act="urename" data-id="${escapeAttr(u.id)}">Rename</button>
+         <button class="btn mini" data-act="uadmin" data-id="${escapeAttr(u.id)}">${u.isAdmin?"Revoke admin":"Make admin"}</button>
+         <button class="btn mini" data-act="ureset" data-id="${escapeAttr(u.id)}">Reset</button>
+         <button class="btn mini danger" data-act="udel" data-id="${escapeAttr(u.id)}">Delete</button>`;
     return `<tr>
-      <td>${u.avatar||"🎯"} <b>${escapeHtml(u.name)}</b>${isMe?' <span class="badgePill">you</span>':""}</td>
+      <td>${escapeHtml(u.avatar||"🎯")} <b>${escapeHtml(u.name)}</b>${isMe?' <span class="badgePill">you</span>':""}</td>
       <td>${u.isAdmin?"✓":""}</td>
       <td class="mono">${c.level}</td><td class="mono">${c.xp.toLocaleString()}</td>
-      <td class="mono">${c.rmDone}/${c.rmTotal}</td><td class="mono">${trophyCount(u.progress)}</td>
+      <td class="mono">${c.rmDone}/${c.rmTotal}</td><td class="mono">${userTrophyCount(u)}</td>
       <td>${acts}</td></tr>`;
   }).join("");
   const addForm = SERVER
@@ -1144,8 +1150,8 @@ function adminTasks(){
     return `<tr>
       <td class="mono">${t.id}${isC?' <span class="badgePill">custom</span>':(ov?' <span class="badgePill">edited</span>':"")}</td>
       <td>${escapeHtml(t.title)}</td><td>${escapeHtml(t.phase)}</td><td class="mono">${t.diff}★</td><td class="mono">${t.xp}</td>
-      <td><button class="btn mini" data-act="tedit" data-id="${t.id}">Edit</button>
-      <button class="btn mini danger" data-act="tdel" data-id="${t.id}">Delete</button></td></tr>`;
+      <td><button class="btn mini" data-act="tedit" data-id="${escapeAttr(t.id)}">Edit</button>
+      <button class="btn mini danger" data-act="tdel" data-id="${escapeAttr(t.id)}">Delete</button></td></tr>`;
   }).join("");
   return taskForm()+
     `<div class="row" style="margin:8px 0"><span class="spacer"></span>
@@ -1157,20 +1163,20 @@ function adminTasks(){
 function ruleText(r){ r=r||{type:"manual"};
   switch(r.type){ case "xp":return "XP ≥ "+r.value; case "level":return "Lvl ≥ "+r.value;
     case "tasks":return "Tasks ≥ "+r.value; case "phase":return escapeHtml(r.value)+" done";
-    case "ids":return (r.value||[]).join(","); case "all":return "100% roadmap"; default:return "manual grant"; } }
+    case "ids":return escapeHtml((r.value||[]).join(",")); case "all":return "100% roadmap"; default:return "manual grant"; } }
 function adminTrophies(){
   const list=allTrophies().map(t=>{ const isC=(DB.customTrophies||[]).some(x=>x.id===t.id);
     const c=(TIERS[t.tier]||{}).c||"#888";
     return `<tr>
-      <td>${t.ico} <b>${escapeHtml(t.name)}</b>${isC?' <span class="badgePill">custom</span>':""}</td>
+      <td>${escapeHtml(t.ico)} <b>${escapeHtml(t.name)}</b>${isC?' <span class="badgePill">custom</span>':""}</td>
       <td>${escapeHtml(t.desc||"")}</td>
-      <td style="color:${c}">${(TIERS[t.tier]||{}).n||t.tier||""}</td>
+      <td style="color:${c}">${escapeHtml((TIERS[t.tier]||{}).n||t.tier||"")}</td>
       <td class="mono">${ruleText(t.rule)}</td>
       <td>${trophyEarned(t)?"✓":""}</td>
-      <td>${isC?`<button class="btn mini danger" data-act="trophdel" data-id="${t.id}">Delete</button>`:""}</td></tr>`;
+      <td>${isC?`<button class="btn mini danger" data-act="trophdel" data-id="${escapeAttr(t.id)}">Delete</button>`:""}</td></tr>`;
   }).join("");
-  const uopts=Object.values(DB.users).map(u=>`<option value="${u.id}">${escapeHtml(u.name)}</option>`).join("");
-  const topts=allTrophies().map(t=>`<option value="${t.id}">${escapeHtml(t.name)}</option>`).join("");
+  const uopts=Object.values(DB.users).map(u=>`<option value="${escapeAttr(u.id)}">${escapeHtml(u.name)}</option>`).join("");
+  const topts=allTrophies().map(t=>`<option value="${escapeAttr(t.id)}">${escapeHtml(t.name)}</option>`).join("");
   return `<div class="fbox">
     <div class="row">
       <div class="field" style="max-width:70px"><label>Icon</label><input type="text" id="trIco" maxlength="4" value="🏅"></div>
@@ -1205,12 +1211,12 @@ function adminChallenges(){
       <td><b>${escapeHtml(c.name)}</b><br><small style="color:var(--muted)">${escapeHtml(c.desc||"")}</small></td>
       <td>${c.goalType==="count"?("any "+c.count):((c.taskIds||[]).length+" tasks")}<br><small style="color:var(--muted)">${c.days||7}d window</small></td>
       <td class="mono">+${c.xp||0}</td>
-      <td>${troph?troph.ico+" "+escapeHtml(troph.name):"—"}</td>
+      <td>${troph?escapeHtml(troph.ico)+" "+escapeHtml(troph.name):"—"}</td>
       <td>${c.active?(w.expired?'<span style="color:var(--red)">expired</span>':'<span style="color:var(--greenb)">active</span>'):"off"}</td>
       <td>
-        <button class="btn mini" data-act="chtoggle" data-id="${c.id}">${c.active?"Disable":"Enable"}</button>
-        <button class="btn mini" data-act="chrestart" data-id="${c.id}">Restart</button>
-        <button class="btn mini danger" data-act="chdel" data-id="${c.id}">Delete</button></td></tr>`;
+        <button class="btn mini" data-act="chtoggle" data-id="${escapeAttr(c.id)}">${c.active?"Disable":"Enable"}</button>
+        <button class="btn mini" data-act="chrestart" data-id="${escapeAttr(c.id)}">Restart</button>
+        <button class="btn mini danger" data-act="chdel" data-id="${escapeAttr(c.id)}">Delete</button></td></tr>`;
   }).join("");
   return `<div class="fbox">
     <div class="row">
@@ -1250,7 +1256,7 @@ function adminData(){
         <span class="spacer"></span>
         <button class="btn danger" data-act="wipe">Wipe other accounts + config</button>
       </div>
-      <div class="note">Export writes every account (incl. password hashes) + shared config to one JSON file — sensitive, keep it safe. Import legacy seeds accounts from the old browser "Export ALL" (each profile's temporary password = its username; set real ones afterward). Wipe deletes all <b>other</b> accounts, clears shared config, and resets your own progress.</div>`;
+      <div class="note">Export writes every account (incl. password hashes) + shared config to one JSON file — sensitive, keep it safe. Imported legacy accounts start disabled and non-admin; set each password explicitly before use. Wipe deletes all <b>other</b> accounts, clears shared config, and resets your own progress.</div>`;
   }
   return `<div class="fbox"><div class="row">
       <div class="field"><label>Change admin PIN</label><input type="text" id="newPin" placeholder="new PIN"></div>
@@ -1340,7 +1346,7 @@ function importLegacyHandler(e){          // server mode: seed accounts from bro
     const res=await api("POST","/api/admin/import-legacy",d);
     if(!res.ok){ toast("task","Import failed",(res.j&&res.j.error)||("HTTP "+res.status)); return; }
     await refreshState(); adminRender();
-    toast("task","Imported "+(res.j.created||0)+" account(s)","temp password = username"); };
+    toast("task","Imported "+(res.j.created||0)+" account(s)","set each password before use"); };
   r.readAsText(file);
 }
 
@@ -1432,7 +1438,7 @@ async function onAdminClick(e){
     case "setpin": { if(SERVER) return; const p=(g("newPin").value||"").trim();
         if(p){ DB.settings.adminPin=p; save(); toast("task","PIN updated",""); } return; }
     case "chpw": { if(!SERVER) return; const r=await api("POST","/api/me/password",{old:g("pwOld").value,new:g("pwNew").value});
-        return r.ok?toast("task","Password updated",""):fail(r); }
+        if(!r.ok) return fail(r); location.reload(); return; }
     case "exportAll":
         if(SERVER){ const r=await api("GET","/api/admin/export"); if(!r.ok) return fail(r);
           downloadJson("rt-tracker-server-backup.json",r.j); return toast("task","Full server backup exported",""); }
@@ -1520,7 +1526,9 @@ function applyServerState(s){
        challenges:(s.config&&s.config.challenges)||[] };
   for(const [idk,u] of Object.entries(s.users||{})){
     DB.users[idk]={ id:idk, name:u.name, avatar:u.avatar, isAdmin:u.isAdmin,
-                    stats:u.stats||null, progress:normProg(u.progress||{}) };   // F0: per-user authoritative stats
+                    stats:u.stats||null, trophyCount:Number(u.trophyCount)||0,
+                    hasPrivateProgress:Object.prototype.hasOwnProperty.call(u,"progress"),
+                    progress:normProg(u.progress||{}) };   // private progress only for self/admin
   }
   reselect();
 }
@@ -1539,7 +1547,7 @@ function openAccountMenu(){
     if(act==="close") return closeModal();
     if(act==="logout") return doLogout();
     if(act==="chpw"){ const r=await api("POST","/api/me/password",{old:$("#pwOld").value,new:$("#pwNew").value});
-      if(!r.ok) toast("task","Failed",(r.j&&r.j.error)||""); else { closeModal(); toast("task","Password updated",""); } }
+      if(!r.ok) toast("task","Failed",(r.j&&r.j.error)||""); else location.reload(); }
   });
 }
 function showLogin(msg){

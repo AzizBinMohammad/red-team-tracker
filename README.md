@@ -58,7 +58,7 @@ and central user management. **The page detects the backend automatically** — 
 `server.py` it shows a login screen and talks to the API; opened any other way it falls back to mode A.
 ```bash
 # one-time: create the venv + install Flask
-python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt
+python3 -m venv .venv && ./.venv/bin/pip install -r requirements.lock
 
 # run it  (first run prints a generated admin username + password to the console)
 ./run.sh                          # → http://127.0.0.1:8000
@@ -74,7 +74,7 @@ top-bar profile chip.
 ./run.sh --set-password bob newpass      # reset a password
 ./run.sh --list-users                    # list accounts
 ./run.sh --import-legacy rt-tracker-all.json   # seed accounts from a mode-A "Export ALL"
-# env: RTT_HOST RTT_PORT RTT_DB RTT_SECURE(=1 behind TLS) RTT_ADMIN_USER RTT_ADMIN_PASS
+# env: RTT_HOST RTT_PORT RTT_DB RTT_SECURE(=1 behind TLS) RTT_SESSION_HOURS RTT_ADMIN_USER RTT_ADMIN_PASS
 ```
 
 **Security notes (server mode):** passwords are scrypt-hashed; sessions are HttpOnly + SameSite=Lax
@@ -93,8 +93,8 @@ leaderboard shows these authoritative numbers.
 
 **Migrating from standalone → server:** in mode A, Admin ▸ Data ▸ **Export ALL** to get
 `rt-tracker-all.json`, then `./run.sh --import-legacy rt-tracker-all.json` (or the in-app
-Admin ▸ Data ▸ *Import legacy*). Each old profile becomes an account whose **temporary password is
-its username** — reset them afterward.
+Admin ▸ Data ▸ *Import legacy*). Imported profiles start non-admin and cannot log in until an
+administrator explicitly sets each password.
 
 ## Features
 
@@ -147,6 +147,17 @@ python3 build_xlsx.py && python3 build_web.py
 ```
 Progress is keyed by task **ID**, so keep IDs stable and saved progress survives regeneration.
 (Admins can also add tasks live in the app without touching Python — those are stored per-browser.)
+
+## Build a release archive
+
+Use the allowlist-based packager; do not zip the working directory directly:
+
+```bash
+python3 package_release.py
+```
+
+The archive is written under `dist/` and excludes runtime databases, signing keys, Git history,
+virtual environments, caches, and local backups.
 
 
 
